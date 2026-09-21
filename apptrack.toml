@@ -1,0 +1,3167 @@
+# AppTrack — accepted initial bootstrap, 2026-09-09
+#
+# This file is the working ledger. The source Markdown files are reference only.
+# Coverage: named local trial apps, all ten tauri.nix personal apps, coding agents,
+# and explicit "to archive" decisions. The rest of Master-Apps-List is on TASKBOARD.
+#
+# Missing installed/version fields mean UNKNOWN, not false or latest.
+# Considering is the conservative bootstrap default; installed does not mean Using.
+# Personal tauri.nix apps are Using per apptrack.md; review that choice here.
+# evidence.download_version describes source notes, NOT the installed executable.
+# No imported app is owned by AppTrack. No removal receipts have been issued.
+# Recipe, provenance_history, and additional hand-written fields survive TUI edits.
+#
+schema_version = 1
+bootstrap_reviewed = true
+
+
+# ── Editing ──────────────────────────────────────────────
+
+[[apps]]
+identity = "https://github.com/jaycee1285/ferritor"
+name = "ferritor"
+category = "Editing"
+description = "Native filesystem browser and text editor"
+tags = ["gui"]
+disposition = "using"
+installed = true
+outcome = "unknown"
+installed_paths = [
+  "/etc/profiles/per-user/john/bin/ferritor",
+]
+
+[apps.provenance]
+source = "nix"
+repo = "https://github.com/jaycee1285/ferritor"
+installer = "home-manager"
+package = "apps.ferritor"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 43
+config_expression = "apps.ferritor"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/repos/config/tauri.nix; ~/repos/config/home/gui-apps.nix; ferritebar in home/ferritebar.nix"
+observed_on = "2026-09-09"
+configured_version = "0.1.0"
+
+[apps.launch]
+program = "/etc/profiles/per-user/john/bin/ferritor"
+args = []
+gui = true
+
+
+[[apps]]
+identity = "name:descry"
+name = "Descry"
+category = "Editing"
+description = "lightweight Ferritor-style editor in C; keep in back of mind"
+tags = []
+disposition = "archived"
+outcome = "unknown"
+review = "lightweight Ferritor-style editor in C; keep in back of mind"
+
+[apps.provenance]
+source = "unknown"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/Master-Apps-List.md — explicit 'to archive' section"
+observed_on = "2026-09-09"
+noted_artifact_type = "unknown"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "name:ecrire"
+name = "ecrire"
+category = "Editing"
+description = "enlightenment theme, otherwise good"
+tags = []
+disposition = "archived"
+outcome = "unknown"
+review = "enlightenment theme, otherwise good"
+
+[apps.provenance]
+source = "unknown"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/Master-Apps-List.md — explicit 'to archive' section"
+observed_on = "2026-09-09"
+noted_artifact_type = "unknown"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://editide.frama.io/"
+name = "editide"
+category = "Editing"
+description = "Source-code editor with basic project support."
+tags = ["gui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "4.0.2"
+noted_artifact_type = "tar.xz"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "name:gedit"
+name = "gedit"
+category = "Editing"
+description = "really close, can't focus panels"
+tags = []
+disposition = "archived"
+outcome = "unknown"
+review = "really close, can't focus panels"
+
+[apps.provenance]
+source = "unknown"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/Master-Apps-List.md — explicit 'to archive' section"
+observed_on = "2026-09-09"
+noted_artifact_type = "unknown"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "name:kite"
+name = "kite"
+category = "Editing"
+description = "Purpose and upstream need review"
+tags = []
+disposition = "considering"
+installed = true
+outcome = "unknown"
+installed_paths = [
+  "~/.local/bin/kite",
+]
+
+[apps.provenance]
+source = "manual"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md — shorthand; identity needs review"
+observed_on = "2026-09-09"
+noted_artifact_type = "unknown"
+
+
+[[apps]]
+identity = "name:quick"
+name = "quick"
+category = "Editing"
+description = "Purpose needs review"
+tags = []
+disposition = "considering"
+installed = true
+outcome = "unknown"
+installed_paths = [
+  "~/.local/bin/quick",
+]
+
+[apps.provenance]
+source = "manual"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md — shorthand; identity needs review"
+observed_on = "2026-09-09"
+noted_artifact_type = "unknown"
+
+
+[[apps]]
+identity = "name:rust-pad"
+name = "rust-pad"
+category = "Editing"
+description = "Purpose needs review"
+tags = []
+disposition = "considering"
+installed = true
+outcome = "unknown"
+installed_paths = [
+  "~/.local/bin/rust-pad",
+]
+
+[apps.provenance]
+source = "manual"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md — shorthand; identity needs review"
+observed_on = "2026-09-09"
+noted_artifact_type = "unknown"
+
+
+[[apps]]
+identity = "https://github.com/marc2332/valin"
+name = "valin"
+category = "Editing"
+description = "won't compile. meh."
+tags = []
+disposition = "archived"
+outcome = "failed"
+review = "won't compile. meh."
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/marc2332/valin"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/Master-Apps-List.md — explicit 'to archive' section"
+observed_on = "2026-09-09"
+noted_artifact_type = "unknown"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+
+# ── Development Workspaces ──────────────────────────────────────────────
+
+[[apps]]
+identity = "https://github.com/msavox/cleecode"
+name = "clee"
+category = "Development Workspaces"
+description = "Terminal IDE with micro-style editing, file tree and integrated terminals."
+tags = ["tui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/msavox/cleecode"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "0.24.1"
+noted_artifact_type = "tar.gz"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/vitali87/croft"
+name = "croft"
+category = "Development Workspaces"
+description = "VSCode-style terminal IDE in Rust."
+tags = ["tui"]
+disposition = "considering"
+installed = true
+outcome = "unknown"
+version = "0.1.758"
+installed_paths = [
+  "~/.cargo/bin/croft",
+]
+
+[apps.provenance]
+source = "cargo"
+repo = "https://github.com/vitali87/croft"
+installer = "cargo-install"
+package = "croft-software"
+managed_by_apptrack = false
+
+[apps.recipe]
+source = "cargo"
+installer = "cargo-install"
+package = "croft-software"
+registry = "crates-io"
+root = "~/.cargo"
+bins = ["croft"]
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+noted_artifact_type = "cargo"
+version_basis = "~/.cargo/.crates.toml; package-manager receipt, binary not executed"
+note = "Notes suggest cargo --git, but current cargo receipt says registry package croft-software."
+
+[apps.launch]
+program = "~/.cargo/bin/croft"
+args = []
+gui = false
+
+
+[[apps]]
+identity = "https://github.com/getkono/karet"
+name = "karet"
+category = "Development Workspaces"
+description = "TUI code editor for terminal-centric coding."
+tags = ["tui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/getkono/karet"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "0.6.0"
+noted_artifact_type = "tar.gz"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "name:kyanite"
+name = "Kyanite"
+category = "Development Workspaces"
+description = "solid Rust/GTK IDE-like environment; someone else's project, nothing truly unique"
+tags = []
+disposition = "archived"
+outcome = "unknown"
+review = "solid Rust/GTK IDE-like environment; someone else's project, nothing truly unique"
+
+[apps.provenance]
+source = "unknown"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/Master-Apps-List.md — explicit 'to archive' section"
+observed_on = "2026-09-09"
+noted_artifact_type = "unknown"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/sollawen/microNeo"
+name = "microneo"
+category = "Development Workspaces"
+description = "Terminal editor integrating OpenCode and Pi."
+tags = ["tui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/sollawen/microNeo"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "1.0.5"
+noted_artifact_type = "tar.gz"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/runyte/runyte"
+name = "runyte"
+category = "Development Workspaces"
+description = "Editor, terminals, files and Git in one workspace."
+tags = ["tui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/runyte/runyte"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+noted_artifact_type = "unknown"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/termide/termide"
+name = "termide"
+category = "Development Workspaces"
+description = "Terminal IDE, file manager and virtual terminal."
+tags = ["tui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/termide/termide"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "0.31.0 x86_64 musl replaced wrong-arch download"
+noted_artifact_type = "tar.gz"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/paradise-runner/toast"
+name = "toast"
+category = "Development Workspaces"
+description = "Batteries-included terminal IDE."
+tags = ["tui"]
+disposition = "considering"
+installed = true
+outcome = "unknown"
+installed_paths = [
+  "~/.local/bin/toast-linux-amd64",
+]
+
+[apps.provenance]
+source = "manual"
+repo = "https://github.com/paradise-runner/toast"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "0.8.1"
+noted_artifact_type = "zip"
+
+[apps.launch]
+program = "~/.local/bin/toast-linux-amd64"
+args = []
+gui = false
+
+
+[[apps]]
+identity = "https://github.com/eugenioenko/ttt"
+name = "ttt"
+category = "Development Workspaces"
+description = "Terminal Text Tool: single-binary editor and IDE."
+tags = ["tui"]
+disposition = "considering"
+installed = true
+outcome = "unknown"
+installed_paths = ["~/.local/bin/ttt-linux-amd64"]
+version = "v1.4.0"
+
+[apps.provenance]
+source = "github"
+repo = "https://github.com/eugenioenko/ttt"
+release = "v1.4.0"
+asset = "ttt-linux-amd64"
+asset_api_url = "https://api.github.com/repos/eugenioenko/ttt/releases/assets/531728912"
+installer = "binary-copy"
+managed_by_apptrack = true
+sha256 = "511fb66d8e708f467ef70bd75dae72789bd211d8d5c38a005496ea955e1841bc"
+installed_at_unix = 1789018866
+installed_paths = ["/home/john/.local/bin/ttt-linux-amd64"]
+
+[[apps.provenance_history]]
+source = "manual"
+repo = "https://github.com/eugenioenko/ttt"
+managed_by_apptrack = false
+ended_at_unix = 1789018866
+
+[apps.last_action]
+action = "update"
+result = "success"
+at_unix = 1789018866
+release = "v1.4.0"
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "1.2.2"
+noted_artifact_type = "binary"
+
+[apps.recipe]
+source = "github"
+repo = "eugenioenko/ttt"
+asset = "ttt-linux-amd64"
+installer = "binary-copy"
+clean_filename = true
+destination = "~/.local/bin/ttt-linux-amd64"
+os = "linux"
+arch = "x86_64"
+
+[apps.launch]
+program = "~/.local/bin/ttt-linux-amd64"
+args = []
+gui = false
+
+
+[[apps]]
+identity = "https://github.com/vsdudakov/yara-code"
+name = "yara-code"
+category = "Development Workspaces"
+description = "Lightweight editor for reviewing agent-written files and diffs."
+tags = ["tui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/vsdudakov/yara-code"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "1.3.0; ycode binary identity assumed in notes"
+noted_artifact_type = "tar.gz"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+# Added explicitly — installation/provenance not yet verified.
+[[apps]]
+identity = "https://github.com/tysonlabs/lazyide"
+name = "lazyide"
+category = "Development Workspaces"
+description = "A full IDE experience anywhere you have a terminal. SSH into a server, run lazyide, and pair with your agentic coding tool."
+disposition = "considering"
+outcome = "unknown"
+tags = []
+version = "v0.3.91"
+installed = true
+installed_paths = ["~/.local/bin/lazyide"]
+
+[apps.recipe]
+source = "github"
+repo = "TysonLabs/lazyide"
+asset = "lazyide-linux-x86_64.tar.gz"
+installer = "tar.gz"
+destination = "~/.local/bin/lazyide"
+os = "linux"
+arch = "x86_64"
+clean_filename = false
+member = "lazyide"
+
+[apps.launch]
+program = "~/.local/bin/lazyide"
+args = []
+gui = false
+
+[apps.provenance]
+source = "github"
+repo = "https://github.com/TysonLabs/lazyide"
+release = "v0.3.91"
+asset = "lazyide-linux-x86_64.tar.gz"
+asset_api_url = "https://api.github.com/repos/TysonLabs/lazyide/releases/assets/556337385"
+installer = "tar.gz"
+asset_sha256 = "57531f8f4fef947d4fd39f7d73f5bafafe457a04c57ef8113ec0625128d34bba"
+member = "lazyide"
+managed_by_apptrack = true
+sha256 = "cbddfe47705be0e3e5ea3be23d1cacadffd41df3140190e3dabadf19404e3389"
+installed_at_unix = 1789136330
+installed_paths = ["/home/john/.local/bin/lazyide"]
+
+[apps.last_action]
+action = "install"
+result = "success"
+at_unix = 1789136330
+release = "v0.3.91"
+
+
+
+# ── Writing ──────────────────────────────────────────────
+
+[[apps]]
+identity = "https://github.com/mijowi/edamame"
+name = "edamame"
+category = "Writing"
+description = "Fast Markdown editor and viewer for the terminal."
+tags = ["tui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/mijowi/edamame"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "0.1.1"
+noted_artifact_type = "tar.xz"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/OlaProeis/Ferrite"
+name = "ferrite"
+category = "Writing"
+description = "Native Markdown, JSON, YAML and TOML editor in Rust/egui."
+tags = ["gui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/OlaProeis/Ferrite"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "0.3.0 from downloaded binary"
+noted_artifact_type = "tar.gz"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "name:ink-md"
+name = "ink-md"
+category = "Writing"
+description = "Markdown terminal viewer"
+tags = ["tui"]
+disposition = "considering"
+installed = true
+outcome = "unknown"
+installed_paths = [
+  "~/.local/bin/ink-md",
+]
+
+[apps.provenance]
+source = "manual"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md — shorthand; identity needs review"
+observed_on = "2026-09-09"
+noted_artifact_type = "unknown"
+
+[apps.launch]
+program = "~/.local/bin/ink-md"
+args = []
+gui = false
+
+
+[[apps]]
+identity = "https://github.com/vulogov/blackInkhaven"
+name = "inkhaven"
+category = "Writing"
+description = "Terminal writing environment with Typst, search and an assistant."
+tags = ["tui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/vulogov/blackInkhaven"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "3.0.3 from downloaded binary"
+noted_artifact_type = "tar.gz"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/4worlds4w-svg/inkwell"
+name = "inkwell"
+category = "Writing"
+description = "Lightweight portable Markdown editor."
+tags = ["gui"]
+disposition = "considering"
+installed = true
+outcome = "unknown"
+installed_paths = [
+  "~/.local/bin/inkwell",
+]
+
+[apps.provenance]
+source = "manual"
+repo = "https://github.com/4worlds4w-svg/inkwell"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "1.3.0; notes link a newer release"
+noted_artifact_type = "tar.gz"
+
+[apps.launch]
+program = "~/.local/bin/inkwell"
+args = []
+gui = true
+
+
+[[apps]]
+identity = "name:markwasm"
+name = "markwasm"
+category = "Writing"
+description = "Purpose needs review"
+tags = []
+disposition = "considering"
+installed = true
+outcome = "unknown"
+installed_paths = [
+  "~/.local/bin/markwasm",
+]
+
+[apps.provenance]
+source = "manual"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md — shorthand; identity needs review"
+observed_on = "2026-09-09"
+noted_artifact_type = "unknown"
+
+
+[[apps]]
+identity = "https://github.com/Vesperino/MerMarkEditor"
+name = "mermarkeditor"
+category = "Writing"
+description = "Markdown and Mermaid editor."
+tags = ["gui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/Vesperino/MerMarkEditor"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "0.3.0"
+noted_artifact_type = "appimage"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/Razee4415/Paperling"
+name = "paperling"
+category = "Writing"
+description = "Minimal distraction-free Markdown editor."
+tags = ["gui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/Razee4415/Paperling"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "1.0.48"
+noted_artifact_type = "appimage"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/snooky234/scribedog"
+name = "scribedog"
+category = "Writing"
+description = "Private WYSIWYG Markdown editor with agent chat and dictation."
+tags = ["gui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/snooky234/scribedog"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "0.5.2"
+noted_artifact_type = "appimage"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/shizumu-app/shizumu"
+name = "shizumu"
+category = "Writing"
+description = "Private writing space for thinking and pinning what matters."
+tags = ["gui"]
+disposition = "considering"
+installed = true
+outcome = "unknown"
+installed_paths = [
+  "~/.local/bin/shizumu",
+]
+
+[apps.provenance]
+source = "manual"
+repo = "https://github.com/shizumu-app/shizumu"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "0.3.2"
+noted_artifact_type = "tar.gz"
+
+[apps.launch]
+program = "~/.local/bin/shizumu"
+args = []
+gui = true
+
+
+[[apps]]
+identity = "https://github.com/csymd/symsight"
+name = "symsight"
+category = "Writing"
+description = "CLI/TUI for generating article and social-post insights."
+tags = ["tui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/csymd/symsight"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "0.2.2"
+noted_artifact_type = "binary"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/manyougz/velotype"
+name = "velotype"
+category = "Writing"
+description = "Native Markdown editor built with Rust and GPUI."
+tags = ["gui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/manyougz/velotype"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "0.7.2"
+noted_artifact_type = "tar.gz"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+note = "Older notes list ~/.local/bin/velotype; that path was absent during bootstrap."
+
+
+
+# ── PKM ──────────────────────────────────────────────
+
+[[apps]]
+identity = "https://github.com/tunabirgun/arf"
+name = "arf"
+category = "PKM"
+description = "Local-first second brain for research and code."
+tags = ["gui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/tunabirgun/arf"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "2.0.0"
+noted_artifact_type = "appimage"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/reekta92/clin-rs"
+name = "clin-rs"
+category = "PKM"
+description = "Obsidian-inspired TUI note management."
+tags = ["tui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/reekta92/clin-rs"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "0.12"
+noted_artifact_type = "tar.gz"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/mayneyao/eidos"
+name = "eidos"
+category = "PKM"
+description = "Extensible framework for personal data management."
+tags = ["gui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/mayneyao/eidos"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+noted_artifact_type = "unknown"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/iamrohithrnair/emeraldian"
+name = "emeraldian"
+category = "PKM"
+description = "Obsidian-vault TUI with backlinks, graph and an assistant."
+tags = ["tui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/iamrohithrnair/emeraldian"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "0.5.0"
+noted_artifact_type = "tar.gz"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://codeberg.org/Nifou/fibbo"
+name = "fibbo"
+category = "PKM"
+description = "Cross-device note-taking app."
+tags = ["gui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://codeberg.org/Nifou/fibbo"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "0.6.0"
+noted_artifact_type = "binary"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+[apps.launch]
+program = "~/.local/bin/fibbo"
+args = []
+gui = true
+
+[apps.recipe]
+source = "codeberg"
+repo = "Nifou/fibbo"
+asset = "fibbo_desktop_linux_x86_64_v{version_underscores}"
+installer = "binary-copy"
+destination = "~/.local/bin/fibbo"
+os = "linux"
+arch = "x86_64"
+
+
+[[apps]]
+identity = "https://gitlab.com/ArkHost/HelixNotes"
+name = "helixnotes"
+category = "PKM"
+description = "Local Markdown note-taking app without accounts."
+tags = ["gui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://gitlab.com/ArkHost/HelixNotes"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "1.3.2"
+noted_artifact_type = "appimage"
+uncertainty = "Observed ~/Downloads/HelixNotes_1.3.2_amd64.AppImage as staging only; no installed path is claimed."
+
+[apps.launch]
+program = "appimage-run"
+args = ["-w", "~/.local/share/apptrack/appdirs/helixnotes"]
+gui = true
+
+[apps.recipe]
+source = "gitlab"
+repo = "ArkHost/HelixNotes"
+asset = "HelixNotes_{version}_amd64.AppImage"
+installer = "appimage-appdir"
+destination = "~/.local/share/apptrack/appdirs/helixnotes"
+os = "linux"
+arch = "x86_64"
+
+
+[[apps]]
+identity = "name:lume"
+name = "lume"
+category = "PKM"
+description = "Purpose and upstream need review"
+tags = []
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md — shorthand; identity needs review"
+observed_on = "2026-09-09"
+noted_artifact_type = "unknown"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/jonathanpopham/ontoloom"
+name = "ontoloom"
+category = "PKM"
+description = "Airgapped ontology and knowledge-graph builder."
+tags = ["cli"]
+disposition = "considering"
+installed = true
+outcome = "unknown"
+installed_paths = [
+  "~/.local/bin/ontoloom",
+]
+
+[apps.provenance]
+source = "manual"
+repo = "https://github.com/jonathanpopham/ontoloom"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "0.1.0"
+noted_artifact_type = "tar.gz"
+
+[apps.launch]
+program = "~/.local/bin/ontoloom"
+args = []
+gui = false
+
+
+[[apps]]
+identity = "https://github.com/roblillack/piki"
+name = "piki"
+category = "PKM"
+description = "Knowledge base using plain Markdown files."
+tags = ["gui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/roblillack/piki"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "0.7"
+noted_artifact_type = "binary"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/graphif/project-graph"
+name = "project-graph"
+category = "PKM"
+description = "Node-based visual tool for thoughts and notes."
+tags = ["gui"]
+disposition = "considering"
+installed = true
+outcome = "unknown"
+installed_paths = [
+  "/etc/profiles/per-user/john/bin/project-graph",
+]
+review = "Old AppImage 3.1.0 failed to initialize the Qt xcb plugin; now configured as pkgs.unstable.project-graph. Current runtime outcome unverified."
+
+[apps.provenance]
+source = "nix"
+repo = "https://github.com/graphif/project-graph"
+installer = "home-manager"
+package = "pkgs.unstable.project-graph"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 31
+config_expression = "pkgs.unstable.project-graph"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+noted_artifact_type = "nix"
+
+[apps.launch]
+program = "/etc/profiles/per-user/john/bin/project-graph"
+args = []
+gui = true
+
+
+[[apps]]
+identity = "https://github.com/suchnsuch/Tangent"
+name = "tangent"
+category = "PKM"
+description = "Local note writing and personal knowledge management."
+tags = ["gui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/suchnsuch/Tangent"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "0.12.2-beta.4"
+noted_artifact_type = "appimage"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+[apps.recipe]
+source = "flatpak"
+installer = "flatpak"
+package = "io.github.suchnsuch.Tangent"
+remote = "flathub"
+remote_url = "https://dl.flathub.org/repo/"
+installation = "system"
+arch = "x86_64"
+branch = "stable"
+
+
+
+# ── AI Agents ──────────────────────────────────────────────
+
+[[apps]]
+identity = "https://claude.ai/code"
+name = "claude"
+category = "AI Agents"
+description = "Anthropic coding agent CLI."
+tags = ["tui", "multi-install"]
+disposition = "using"
+installed = true
+outcome = "unknown"
+version = "2.1.273"
+installed_paths = [
+  "~/.local/bin/claude",
+]
+
+[apps.provenance]
+source = "native"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "Master-Apps-List.md; local and Nix/Bun installation evidence"
+observed_on = "2026-09-16"
+version_basis = "selected native symlink target plus exact source-specific version checks"
+
+[apps.launch]
+program = "~/.local/bin/claude"
+args = []
+gui = false
+
+[[apps.installations]]
+source = "native"
+installer = "claude-native"
+version = "2.1.273"
+installed_paths = ["~/.local/bin/claude"]
+preferred = true
+
+[[apps.installations]]
+source = "bun"
+installer = "bun-global"
+package = "@anthropic-ai/claude-code"
+version = "2.1.119"
+installed_paths = ["~/.bun/bin/claude"]
+
+[[apps.installations]]
+source = "nix"
+installer = "home-manager"
+package = "pkgs.unstable.claude-code"
+version = "2.1.266"
+installed_paths = ["/etc/profiles/per-user/john/bin/claude"]
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 31
+config_expression = "pkgs.unstable.claude-code"
+
+
+[[apps]]
+identity = "https://github.com/openai/codex"
+name = "codex"
+category = "AI Agents"
+description = "OpenAI coding agent CLI."
+tags = ["tui", "multi-install"]
+disposition = "using"
+installed = true
+outcome = "unknown"
+version = "0.154.0"
+installed_paths = [
+  "~/.local/bin/codex",
+]
+
+[apps.provenance]
+source = "bun"
+repo = "https://github.com/openai/codex"
+package = "@openai/codex"
+installer = "bun-global"
+managed_by_apptrack = false
+
+[apps.recipe]
+source = "bun"
+installer = "bun-global"
+package = "@openai/codex"
+registry = "https://registry.npmjs.org"
+root = "~/.bun"
+bins = ["codex"]
+
+[apps.evidence]
+imported_from = "Master-Apps-List.md; local symlink and installed package.json"
+observed_on = "2026-09-16"
+version_basis = "selected Bun package.json plus exact Nix command version check"
+
+[apps.launch]
+program = "~/.local/bin/codex"
+args = []
+gui = false
+
+[[apps.installations]]
+source = "bun"
+installer = "bun-global"
+package = "@openai/codex"
+version = "0.154.0"
+installed_paths = ["~/.local/bin/codex"]
+preferred = true
+
+[[apps.installations]]
+source = "nix"
+installer = "home-manager"
+package = "codex"
+version = "0.154.0"
+installed_paths = ["/etc/profiles/per-user/john/bin/codex"]
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 6
+config_expression = "codex"
+
+
+[[apps]]
+identity = "npm:@earendil-works/pi-coding-agent"
+name = "pi"
+category = "AI Agents"
+description = "Extensible terminal coding agent."
+tags = ["tui", "multi-install"]
+disposition = "using"
+installed = true
+outcome = "unknown"
+version = "0.84.2"
+installed_paths = [
+  "~/.local/bin/pi",
+]
+
+[apps.provenance]
+source = "bun"
+package = "@earendil-works/pi-coding-agent"
+installer = "bun-global"
+managed_by_apptrack = false
+
+[apps.recipe]
+source = "bun"
+installer = "bun-global"
+package = "@earendil-works/pi-coding-agent"
+registry = "https://registry.npmjs.org"
+root = "~/.bun"
+bins = ["pi"]
+
+[apps.evidence]
+imported_from = "Spec context; local symlink and installed package.json"
+observed_on = "2026-09-16"
+version_basis = "selected and secondary Bun package.json files; no Nix declaration observed"
+
+[apps.launch]
+program = "~/.local/bin/pi"
+args = []
+gui = false
+
+[[apps.installations]]
+source = "bun"
+installer = "bun-global"
+package = "@earendil-works/pi-coding-agent"
+version = "0.84.2"
+installed_paths = ["~/.local/bin/pi"]
+preferred = true
+
+[[apps.installations]]
+source = "bun"
+installer = "bun-global"
+package = "@mariozechner/pi-coding-agent"
+version = "0.73.1"
+installed_paths = ["~/.bun/bin/pi"]
+
+
+[[apps]]
+identity = "https://github.com/roackb2/heddle"
+name = "heddle"
+category = "AI Agents"
+description = "Open-source terminal coding-agent runtime."
+tags = ["tui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/roackb2/heddle"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "0.5.0"
+noted_artifact_type = "appimage"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/1jehuang/jcode"
+name = "jcode"
+category = "AI Agents"
+description = "Memory-efficient coding-agent harness."
+tags = ["tui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/1jehuang/jcode"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "0.81.2"
+noted_artifact_type = "tar.gz"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+
+# ── AI Workspaces ──────────────────────────────────────────────
+
+[[apps]]
+identity = "https://github.com/jaycee1285/openswarm"
+name = "openswarm"
+category = "AI Workspaces"
+description = "Desktop and mobile agent-session workspace"
+tags = ["gui"]
+disposition = "using"
+installed = true
+outcome = "unknown"
+installed_paths = [
+  "/etc/profiles/per-user/john/bin/openswarm",
+]
+
+[apps.provenance]
+source = "nix"
+repo = "https://github.com/jaycee1285/openswarm"
+installer = "home-manager"
+package = "apps.openswarm"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 101
+config_expression = "apps.openswarm"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/repos/config/tauri.nix; ~/repos/config/home/gui-apps.nix; ferritebar in home/ferritebar.nix"
+observed_on = "2026-09-09"
+configured_version = "main"
+
+[apps.launch]
+program = "/etc/profiles/per-user/john/bin/openswarm"
+args = []
+gui = true
+
+
+[[apps]]
+identity = "https://github.com/milisp/codexia"
+name = "codexia"
+category = "AI Workspaces"
+description = "Agent workstation for Codex and Claude Code."
+tags = ["gui"]
+disposition = "considering"
+outcome = "unknown"
+review = "Conflicting trial notes: Master list says won't load; later local notes say passed with AppImage. Needs review."
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/milisp/codexia"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+noted_artifact_type = "unknown"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/Lucenx9/forktty"
+name = "forktty"
+category = "AI Workspaces"
+description = "Linux coding-agent workspace with embedded Ghostty and worktrees."
+tags = ["gui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/Lucenx9/forktty"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "0.2.0-alpha.15"
+noted_artifact_type = "appimage"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/parkers0405/neoism"
+name = "neoism"
+category = "AI Workspaces"
+description = "GPU workspace with terminals, Neovim, agents and notes."
+tags = ["gui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/parkers0405/neoism"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "0.7.84"
+noted_artifact_type = "tar.gz"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/crynta/terax-ai"
+name = "terax"
+category = "AI Workspaces"
+description = "Lightweight terminal-first AI development workspace."
+tags = ["gui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/crynta/terax-ai"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "0.7.3"
+noted_artifact_type = "appimage"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+
+# ── AI Tools ──────────────────────────────────────────────
+
+[[apps]]
+identity = "https://github.com/jaycee1285/browssion"
+name = "browssion"
+category = "AI Tools"
+description = "Browse and search AI assistant coding sessions"
+tags = ["gui"]
+disposition = "using"
+installed = true
+outcome = "unknown"
+installed_paths = [
+  "/etc/profiles/per-user/john/bin/browssion",
+]
+
+[apps.provenance]
+source = "nix"
+repo = "https://github.com/jaycee1285/browssion"
+installer = "home-manager"
+package = "apps.browssion"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 104
+config_expression = "apps.browssion"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/repos/config/tauri.nix; ~/repos/config/home/gui-apps.nix; ferritebar in home/ferritebar.nix"
+observed_on = "2026-09-09"
+configured_version = "0.1.0"
+
+[apps.launch]
+program = "/etc/profiles/per-user/john/bin/browssion"
+args = []
+gui = true
+
+
+[[apps]]
+identity = "https://github.com/jaycee1285/dotagent"
+name = "dotagent"
+category = "AI Tools"
+description = "Agent configuration workspace"
+tags = ["gui"]
+disposition = "using"
+installed = true
+outcome = "unknown"
+installed_paths = [
+  "/etc/profiles/per-user/john/bin/dotagent",
+]
+
+[apps.provenance]
+source = "nix"
+repo = "https://github.com/jaycee1285/dotagent"
+installer = "home-manager"
+package = "apps.dotagent"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 97
+config_expression = "apps.dotagent"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/repos/config/tauri.nix; ~/repos/config/home/gui-apps.nix; ferritebar in home/ferritebar.nix"
+observed_on = "2026-09-09"
+configured_version = "0.1.0"
+
+[apps.launch]
+program = "/etc/profiles/per-user/john/bin/dotagent"
+args = []
+gui = true
+
+
+[[apps]]
+identity = "https://github.com/subinium/agf"
+name = "agf"
+category = "AI Tools"
+description = "AI agent session finder and resumer."
+tags = ["tui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/subinium/agf"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "0.13.1"
+noted_artifact_type = "tar.gz"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/akitaonrails/ai-usagebar"
+name = "ai-usagebar"
+category = "AI Tools"
+description = "Monitor coding-agent plans and credits; widget and TUI."
+tags = ["tui"]
+disposition = "considering"
+installed = true
+outcome = "unknown"
+version = "0.7.1"
+installed_paths = [
+  "~/.cargo/bin/ai-usagebar",
+  "~/.cargo/bin/ai-usagebar-tui",
+]
+
+[apps.provenance]
+source = "cargo"
+repo = "https://github.com/akitaonrails/ai-usagebar"
+installer = "cargo-install"
+package = "ai-usagebar"
+managed_by_apptrack = false
+
+[apps.recipe]
+source = "cargo"
+installer = "cargo-install"
+package = "ai-usagebar"
+registry = "crates-io"
+root = "~/.cargo"
+bins = ["ai-usagebar", "ai-usagebar-tui"]
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "~0.16.0 inferred from download date"
+noted_artifact_type = "tar.gz"
+version_basis = "~/.cargo/.crates.toml; package-manager receipt, binary not executed"
+note = "One logical application, two cargo-installed binaries. Old download estimate does not describe the installed cargo package."
+
+[apps.launch]
+program = "~/.cargo/bin/ai-usagebar-tui"
+args = []
+gui = false
+
+
+[[apps]]
+identity = "name:cass"
+name = "cass"
+category = "AI Tools"
+description = "Purpose and upstream need review"
+tags = []
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md — shorthand; identity needs review"
+observed_on = "2026-09-09"
+noted_artifact_type = "unknown"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/yvgude/lean-ctx"
+name = "lean-ctx"
+category = "AI Tools"
+description = "Context controls for coding agents."
+tags = ["cli"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/yvgude/lean-ctx"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "3.9.12"
+noted_artifact_type = "tar.gz"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/samzong/Recall"
+name = "recall"
+category = "AI Tools"
+description = "Local search across AI coding sessions."
+tags = ["tui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/samzong/Recall"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "0.5.7"
+noted_artifact_type = "tar.gz"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/Mai0313/VibeCodingTracker"
+name = "vibecodingtracker"
+category = "AI Tools"
+description = "Coding-agent usage and cost analytics."
+tags = ["tui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/Mai0313/VibeCodingTracker"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "2.6.2"
+noted_artifact_type = "tar.gz"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+
+# ── Git ──────────────────────────────────────────────
+
+[[apps]]
+identity = "https://github.com/rushirb2001/cohors"
+name = "cohors"
+category = "Git"
+description = "Multi-repository status dashboard with bulk actions."
+tags = ["tui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/rushirb2001/cohors"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "0.6"
+noted_artifact_type = "tar.xz"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/yetidevworks/drydock"
+name = "drydock"
+category = "Git"
+description = "Uncommitted, unpushed and unreleased work across repositories."
+tags = ["tui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/yetidevworks/drydock"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "1.0.0"
+noted_artifact_type = "tar.gz"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/parazeeknova/gitcha"
+name = "gitcha"
+category = "Git"
+description = "Git app; scope needs review."
+tags = ["gui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/parazeeknova/gitcha"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "0.1.71"
+noted_artifact_type = "appimage + tar.gz"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/affromero/gitpane"
+name = "gitpane"
+category = "Git"
+description = "Multi-repository Git dashboard for the terminal."
+tags = ["tui"]
+disposition = "considering"
+installed = true
+outcome = "unknown"
+installed_paths = [
+  "~/.local/bin/gitpane",
+]
+
+[apps.provenance]
+source = "manual"
+repo = "https://github.com/affromero/gitpane"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "0.14.1"
+noted_artifact_type = "tar.gz"
+
+[apps.launch]
+program = "~/.local/bin/gitpane"
+args = []
+gui = false
+
+
+[[apps]]
+identity = "name:gpk"
+name = "gpk"
+category = "Git"
+description = "Purpose needs review"
+tags = []
+disposition = "considering"
+installed = true
+outcome = "unknown"
+installed_paths = [
+  "~/.local/bin/gpk",
+]
+
+[apps.provenance]
+source = "manual"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md — shorthand; identity needs review"
+observed_on = "2026-09-09"
+noted_artifact_type = "unknown"
+
+
+[[apps]]
+identity = "https://github.com/visorcraft/LinSync"
+name = "linsync"
+category = "Git"
+description = "Graphical diff and merge tool for files and folders."
+tags = ["gui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/visorcraft/LinSync"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "1.16.3"
+noted_artifact_type = "appimage"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/guille/revisa"
+name = "revisa"
+category = "Git"
+description = "Native graphical diff viewer."
+tags = ["gui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/guille/revisa"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "1.2.0"
+noted_artifact_type = "tar.gz"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/noahbclarkson/rgitui"
+name = "rgitui"
+category = "Git"
+description = "GPU-accelerated desktop Git client in Rust/GPUI."
+tags = ["gui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/noahbclarkson/rgitui"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "0.1.4"
+noted_artifact_type = "appimage"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://gitlab.com/paskidev/gitorii"
+name = "torii"
+category = "Git"
+description = "Git client with a TUI, snapshots and multi-platform mirrors."
+tags = ["tui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://gitlab.com/paskidev/gitorii"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "0.7.15 from downloaded binary"
+noted_artifact_type = "binary"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+
+# ── Files & Disks ──────────────────────────────────────────────
+
+[[apps]]
+identity = "https://github.com/elio-fm/elio"
+name = "elio"
+category = "Files & Disks"
+description = "Terminal file manager with previews, images and trash support."
+tags = ["tui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/elio-fm/elio"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "1.12.0"
+noted_artifact_type = "tar.gz"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/GlitchAwakened/Favnyr"
+name = "favnyr"
+category = "Files & Disks"
+description = "Lightweight graphical file manager."
+tags = ["gui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/GlitchAwakened/Favnyr"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "0.3.1"
+noted_artifact_type = "tar.gz"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/ice-commander/app"
+name = "ice commander"
+category = "Files & Disks"
+description = "Cross-platform dual-pane file manager."
+tags = ["gui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/ice-commander/app"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+noted_artifact_type = "unknown"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/kunjee17/irona"
+name = "irona"
+category = "Files & Disks"
+description = "Rust TUI for cleaning build artifacts across a workspace."
+tags = ["tui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/kunjee17/irona"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "0.4.0"
+noted_artifact_type = "tar.gz"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/kaecho/kirei"
+name = "kirei"
+category = "Files & Disks"
+description = "Linux cleaner with CLI, TUI and GUI surfaces."
+tags = ["tui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/kaecho/kirei"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+noted_artifact_type = "unknown"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "name:kondo"
+name = "kondo"
+category = "Files & Disks"
+description = "not better than projclean"
+tags = []
+disposition = "archived"
+outcome = "unknown"
+review = "not better than projclean"
+
+[apps.provenance]
+source = "unknown"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/Master-Apps-List.md — explicit 'to archive' section"
+observed_on = "2026-09-09"
+noted_artifact_type = "unknown"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/AdventDevInc/kudu"
+name = "kudu"
+category = "Files & Disks"
+description = "Cross-platform cleaner and scanner."
+tags = ["gui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/AdventDevInc/kudu"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+noted_artifact_type = "unknown"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/graysky2/profile-cleaner"
+name = "profile-cleaner"
+category = "Files & Disks"
+description = "doesn't really clean anything up"
+tags = []
+disposition = "archived"
+outcome = "unknown"
+review = "doesn't really clean anything up"
+
+[apps.provenance]
+source = "unknown"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/Master-Apps-List.md — explicit 'to archive' section"
+observed_on = "2026-09-09"
+noted_artifact_type = "unknown"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "name:reap"
+name = "reap"
+category = "Files & Disks"
+description = "Purpose and upstream need review"
+tags = []
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md — shorthand; identity needs review"
+observed_on = "2026-09-09"
+noted_artifact_type = "unknown"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/svg153/reclaimit"
+name = "reclaimit"
+category = "Files & Disks"
+description = "CLI/TUI reclaimable-space analysis for developer machines."
+tags = ["tui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/svg153/reclaimit"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "0.1.6"
+noted_artifact_type = "tar.gz"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/alexm-dev/runa"
+name = "runa"
+category = "Files & Disks"
+description = "Fast, lightweight terminal file manager."
+tags = ["tui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/alexm-dev/runa"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "0.12.0"
+noted_artifact_type = "tar.gz"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/sh1zen/wisu"
+name = "wisu"
+category = "Files & Disks"
+description = "Minimal directory-tree viewer in Rust."
+tags = ["cli"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/sh1zen/wisu"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "0.1.6"
+noted_artifact_type = "tar.gz"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+
+# ── System Monitoring ──────────────────────────────────────────────
+
+[[apps]]
+identity = "https://github.com/slowscript/leaftop"
+name = "leaftop"
+category = "System Monitoring"
+description = "GTK system monitor with process grouping."
+tags = ["gui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/slowscript/leaftop"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+noted_artifact_type = "unknown"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/gaborini/monitrs"
+name = "monitrs"
+category = "System Monitoring"
+description = "Keyboard-first system cockpit."
+tags = ["tui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/gaborini/monitrs"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "1.0.1"
+noted_artifact_type = "tar.gz"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/Pommersche92/narsil"
+name = "narsil"
+category = "System Monitoring"
+description = "GPU-aware terminal system resource monitor."
+tags = ["tui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/Pommersche92/narsil"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "0.5.0"
+noted_artifact_type = "tar.gz"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/pgkt04/rmon"
+name = "rmon"
+category = "System Monitoring"
+description = "Rust terminal resource monitor."
+tags = ["tui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/pgkt04/rmon"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "1.3.0"
+noted_artifact_type = "tar.gz"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+
+# ── System Tools ──────────────────────────────────────────────
+
+[[apps]]
+identity = "name:ghr"
+name = "ghr"
+category = "System Tools"
+description = "Purpose and upstream need review"
+tags = []
+disposition = "considering"
+installed = true
+outcome = "unknown"
+version = "0.8.1"
+installed_paths = [
+  "~/.cargo/bin/ghr",
+]
+
+[apps.provenance]
+source = "cargo"
+installer = "cargo-install"
+package = "ghr-cli"
+managed_by_apptrack = false
+
+[apps.recipe]
+source = "cargo"
+installer = "cargo-install"
+package = "ghr-cli"
+registry = "crates-io"
+root = "~/.cargo"
+bins = ["ghr"]
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md — shorthand; identity needs review"
+observed_on = "2026-09-09"
+noted_artifact_type = "unknown"
+version_basis = "~/.cargo/.crates.toml; package-manager receipt, binary not executed"
+
+
+[[apps]]
+identity = "https://github.com/stanlyzoolo/keepkit"
+name = "keepkit"
+category = "System Tools"
+description = "TUI tool-version ledger with update actions, notes and tags."
+tags = ["tui"]
+disposition = "considering"
+outcome = "unknown"
+version = "v0.4.0"
+installed = true
+installed_paths = ["~/.local/bin/keepkit"]
+
+[apps.provenance]
+source = "github"
+repo = "https://github.com/stanlyzoolo/keepkit"
+release = "v0.4.0"
+asset = "keepkit_v0.4.0_linux_x86_64.tar.gz"
+asset_api_url = "https://api.github.com/repos/stanlyzoolo/keepkit/releases/assets/526467798"
+installer = "tar.gz"
+asset_sha256 = "3a3c5837cdd9dcd86c9d7d38c9d2c1ebc21d212fe4211421ee45c62bb74ccb84"
+member = "keepkit"
+managed_by_apptrack = true
+sha256 = "341e4d871021a9ee7c80894691ef7c2898edd0b91b3b5a7118dd9c601ff06e3e"
+installed_at_unix = 1789093709
+installed_paths = ["/home/john/.local/bin/keepkit"]
+
+[[apps.provenance_history]]
+source = "unknown"
+repo = "https://github.com/stanlyzoolo/keepkit"
+managed_by_apptrack = false
+ended_at_unix = 1789093709
+
+[apps.last_action]
+action = "install"
+result = "success"
+at_unix = 1789093709
+release = "v0.4.0"
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "0.3.0"
+noted_artifact_type = "tar.gz"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+[apps.recipe]
+source = "github"
+repo = "stanlyzoolo/keepkit"
+asset = "keepkit_{tag}_linux_x86_64.tar.gz"
+installer = "tar.gz"
+member = "keepkit"
+destination = "~/.local/bin/keepkit"
+os = "linux"
+arch = "x86_64"
+
+[apps.launch]
+program = "~/.local/bin/keepkit"
+args = []
+gui = false
+
+
+[[apps]]
+identity = "name:marshall"
+name = "marshall"
+category = "System Tools"
+description = "Purpose and upstream need review"
+tags = []
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md — shorthand; identity needs review"
+observed_on = "2026-09-09"
+noted_artifact_type = "unknown"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/shep-pm/shep"
+name = "shep"
+category = "System Tools"
+description = "Process manager with watch, cron, logs and webhooks."
+tags = ["cli"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/shep-pm/shep"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+noted_artifact_type = "unknown"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+
+# ── Desktop ──────────────────────────────────────────────
+
+[[apps]]
+identity = "https://github.com/jaycee1285/ferritebar"
+name = "ferritebar"
+category = "Desktop"
+description = "Wayland taskbar and system panels"
+tags = ["gui"]
+disposition = "using"
+installed = true
+outcome = "unknown"
+installed_paths = [
+  "/etc/profiles/per-user/john/bin/ferritebar",
+]
+
+[apps.provenance]
+source = "nix"
+repo = "https://github.com/jaycee1285/ferritebar"
+installer = "home-manager"
+package = "apps.ferritebar"
+config_file = "~/repos/config/home/ferritebar.nix"
+config_line = 6
+config_expression = "apps.ferritebar"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/repos/config/tauri.nix; ~/repos/config/home/gui-apps.nix; ferritebar in home/ferritebar.nix"
+observed_on = "2026-09-09"
+configured_version = "0.1.0"
+
+[apps.launch]
+program = "/etc/profiles/per-user/john/bin/ferritebar"
+args = []
+gui = true
+
+
+[[apps]]
+identity = "https://github.com/jaycee1285/serverbar"
+name = "serverbar"
+category = "Desktop"
+description = "System tray service controls"
+tags = ["gui"]
+disposition = "using"
+installed = true
+outcome = "unknown"
+installed_paths = [
+  "/etc/profiles/per-user/john/bin/serverbar",
+]
+
+[apps.provenance]
+source = "nix"
+repo = "https://github.com/jaycee1285/serverbar"
+installer = "home-manager"
+package = "apps.serverbar"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 99
+config_expression = "apps.serverbar"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/repos/config/tauri.nix; ~/repos/config/home/gui-apps.nix; ferritebar in home/ferritebar.nix"
+observed_on = "2026-09-09"
+configured_version = "0.1.0"
+
+[apps.launch]
+program = "/etc/profiles/per-user/john/bin/serverbar"
+args = []
+gui = true
+
+
+[[apps]]
+identity = "https://github.com/alex-courtis/way-displays"
+name = "way-displays"
+category = "Desktop"
+description = "fucks up scaling for no reason"
+tags = []
+disposition = "archived"
+outcome = "unknown"
+review = "fucks up scaling for no reason"
+
+[apps.provenance]
+source = "unknown"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/Master-Apps-List.md — explicit 'to archive' section"
+observed_on = "2026-09-09"
+noted_artifact_type = "unknown"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "name:wayle"
+name = "wayle"
+category = "Desktop"
+description = "too complex (Wayland compositor utility)"
+tags = []
+disposition = "archived"
+outcome = "unknown"
+review = "too complex (Wayland compositor utility)"
+
+[apps.provenance]
+source = "unknown"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/Master-Apps-List.md — explicit 'to archive' section"
+observed_on = "2026-09-09"
+noted_artifact_type = "unknown"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+
+# ── Terminals ──────────────────────────────────────────────
+
+[[apps]]
+identity = "name:hmx"
+name = "hmx"
+category = "Terminals"
+description = "Purpose and upstream need review"
+tags = []
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md — shorthand; identity needs review"
+observed_on = "2026-09-09"
+noted_artifact_type = "unknown"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/Reddimus/kettle"
+name = "kettle"
+category = "Terminals"
+description = "GPU terminal with splits, Ghostty themes and bundled Nerd Font."
+tags = ["gui"]
+disposition = "considering"
+installed = true
+outcome = "unknown"
+installed_paths = [
+  "~/.local/bin/kettle",
+]
+
+[apps.provenance]
+source = "manual"
+repo = "https://github.com/Reddimus/kettle"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "2.28"
+noted_artifact_type = "tar.gz"
+
+[apps.launch]
+program = "~/.local/bin/kettle"
+args = []
+gui = true
+
+
+[[apps]]
+identity = "https://github.com/l0ng-ai/tty7"
+name = "tty7"
+category = "Terminals"
+description = "GPU terminal workbench with shells, SSH and coding agents."
+tags = ["gui"]
+disposition = "considering"
+installed = true
+outcome = "unknown"
+version = "26.8.3"
+installed_paths = ["~/.local/bin/tty7"]
+
+[apps.provenance]
+source = "native"
+repo = "https://github.com/l0ng-ai/tty7"
+installer = "binary-copy"
+release = "v26.8.3"
+sha256 = "7118ea295b22d0e3b6150f181d596327f68aa772c756b14759bc40ec8ba1d81c"
+installed_paths = ["~/.local/bin/tty7"]
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "26.8.3"
+noted_artifact_type = "appimage + tar.gz"
+uncertainty = "Observed unmanaged native tty7 at ~/.local/bin/tty7 on 2026-09-16; the downloaded AppImage remains a staging artifact, not an AppTrack-managed install."
+
+[apps.launch]
+program = "appimage-run"
+args = ["~/.local/bin/tty7"]
+gui = true
+
+[apps.recipe]
+source = "github"
+repo = "l0ng-ai/tty7"
+asset = "tty7-{version}-linux-x86_64.AppImage"
+installer = "appimage"
+destination = "~/.local/bin/tty7"
+os = "linux"
+arch = "x86_64"
+
+
+
+# ── Productivity ──────────────────────────────────────────────
+
+[[apps]]
+identity = "https://github.com/jaycee1285/clockstop"
+name = "clockstop"
+category = "Productivity"
+description = "Time tracking"
+tags = ["gui"]
+disposition = "using"
+installed = true
+outcome = "unknown"
+installed_paths = [
+  "~/.local/bin/clockstop",
+  "/etc/profiles/per-user/john/bin/clockstop",
+]
+review = "Both a local executable and the Nix profile executable exist. Launch targets the Nix profile; local copy provenance/version remains unknown."
+
+[apps.provenance]
+source = "nix"
+repo = "https://github.com/jaycee1285/clockstop"
+installer = "home-manager"
+package = "apps.clockstop"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 102
+config_expression = "apps.clockstop"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/repos/config/tauri.nix; ~/repos/config/home/gui-apps.nix; ferritebar in home/ferritebar.nix"
+observed_on = "2026-09-09"
+configured_version = "0.1.0"
+
+[apps.launch]
+program = "/etc/profiles/per-user/john/bin/clockstop"
+args = []
+gui = true
+
+
+[[apps]]
+identity = "https://github.com/jaycee1285/coverpro"
+name = "coverpro"
+category = "Productivity"
+description = "Cover-letter workflow"
+tags = ["gui"]
+disposition = "using"
+installed = true
+outcome = "unknown"
+installed_paths = [
+  "/etc/profiles/per-user/john/bin/coverpro",
+]
+
+[apps.provenance]
+source = "nix"
+repo = "https://github.com/jaycee1285/coverpro"
+installer = "home-manager"
+package = "apps.coverpro"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 100
+config_expression = "apps.coverpro"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/repos/config/tauri.nix; ~/repos/config/home/gui-apps.nix; ferritebar in home/ferritebar.nix"
+observed_on = "2026-09-09"
+configured_version = "0.1.0"
+
+[apps.launch]
+program = "/etc/profiles/per-user/john/bin/coverpro"
+args = []
+gui = true
+
+
+[[apps]]
+identity = "https://github.com/jaycee1285/daylight"
+name = "daylight"
+category = "Productivity"
+description = "Local-file tasks and habits"
+tags = ["gui"]
+disposition = "using"
+installed = true
+outcome = "unknown"
+installed_paths = [
+  "/etc/profiles/per-user/john/bin/daylight",
+]
+
+[apps.provenance]
+source = "nix"
+repo = "https://github.com/jaycee1285/daylight"
+installer = "home-manager"
+package = "apps.daylight"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 103
+config_expression = "apps.daylight"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/repos/config/tauri.nix; ~/repos/config/home/gui-apps.nix; ferritebar in home/ferritebar.nix"
+observed_on = "2026-09-09"
+configured_version = "0.1.0"
+
+[apps.launch]
+program = "/etc/profiles/per-user/john/bin/daylight"
+args = []
+gui = true
+
+
+[[apps]]
+identity = "https://github.com/jaycee1285/transcrust"
+name = "transcrust"
+category = "Productivity"
+description = "Audio transcription tools"
+tags = ["gui"]
+disposition = "using"
+installed = true
+outcome = "unknown"
+installed_paths = [
+  "/etc/profiles/per-user/john/bin/transcrust",
+]
+
+[apps.provenance]
+source = "nix"
+repo = "https://github.com/jaycee1285/transcrust"
+installer = "home-manager"
+package = "apps.transcrust"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 98
+config_expression = "apps.transcrust"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/repos/config/tauri.nix; ~/repos/config/home/gui-apps.nix; ferritebar in home/ferritebar.nix"
+observed_on = "2026-09-09"
+configured_version = "0.1.0"
+
+
+[[apps]]
+identity = "name:kairo"
+name = "kairo"
+category = "Productivity"
+description = "Purpose and upstream need review"
+tags = []
+disposition = "considering"
+installed = true
+outcome = "unknown"
+installed_paths = [
+  "~/.local/bin/kairo",
+]
+
+[apps.provenance]
+source = "manual"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md — shorthand; identity needs review"
+observed_on = "2026-09-09"
+noted_artifact_type = "unknown"
+
+
+[[apps]]
+identity = "name:paneflow"
+name = "paneflow"
+category = "Productivity"
+description = "Purpose needs review"
+tags = []
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md — shorthand; identity needs review"
+observed_on = "2026-09-09"
+noted_artifact_type = "unknown"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/wleeaf/projectum"
+name = "projectum"
+category = "Productivity"
+description = "Keyboard-first tracker for projects, playlists and folder-based notes."
+tags = ["gui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/wleeaf/projectum"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+noted_artifact_type = "unknown"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+
+# ── Data & Documents ──────────────────────────────────────────────
+
+[[apps]]
+identity = "https://github.com/t8y2/dbx"
+name = "dbx"
+category = "Data & Documents"
+description = "Lightweight database client for many database engines."
+tags = ["gui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/t8y2/dbx"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "0.5.88"
+noted_artifact_type = "appimage"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "name:docx2md"
+name = "docx2md"
+category = "Data & Documents"
+description = "Document-to-Markdown conversion; upstream unverified"
+tags = ["cli"]
+disposition = "considering"
+installed = true
+outcome = "unknown"
+installed_paths = [
+  "~/.local/bin/docx2md",
+]
+
+[apps.provenance]
+source = "manual"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md — shorthand; identity needs review"
+observed_on = "2026-09-09"
+noted_artifact_type = "unknown"
+
+[apps.launch]
+program = "~/.local/bin/docx2md"
+args = []
+gui = false
+
+
+[[apps]]
+identity = "https://github.com/genspark-ai/genoffice"
+name = "genoffice"
+category = "Data & Documents"
+description = "Office suite with built-in AI agents."
+tags = ["gui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/genspark-ai/genoffice"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+noted_artifact_type = "appimage"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "name:officemd"
+name = "officemd"
+category = "Data & Documents"
+description = "Office-to-Markdown tool; upstream unverified"
+tags = ["cli"]
+disposition = "considering"
+installed = true
+outcome = "unknown"
+version = "0.1.7"
+installed_paths = [
+  "~/.cargo/bin/officemd",
+]
+
+[apps.provenance]
+source = "cargo"
+installer = "cargo-install"
+package = "officemd_cli"
+managed_by_apptrack = false
+
+[apps.recipe]
+source = "cargo"
+installer = "cargo-install"
+package = "officemd_cli"
+registry = "crates-io"
+root = "~/.cargo"
+bins = ["officemd"]
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md — shorthand; identity needs review"
+observed_on = "2026-09-09"
+noted_artifact_type = "unknown"
+version_basis = "~/.cargo/.crates.toml; package-manager receipt, binary not executed"
+
+[apps.launch]
+program = "~/.cargo/bin/officemd"
+args = []
+gui = false
+
+
+[[apps]]
+identity = "https://github.com/Pawandeep-prog/revpdf-release"
+name = "revpdf"
+category = "Data & Documents"
+description = "Offline PDF editor."
+tags = ["gui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/Pawandeep-prog/revpdf-release"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "unknown; old download, no confirmed version"
+noted_artifact_type = "appimage"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/xanathar/tabela"
+name = "tabela"
+category = "Data & Documents"
+description = "Format spreadsheet or CSV tables as HTML or Markdown."
+tags = ["gui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/xanathar/tabela"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "1.2.0"
+noted_artifact_type = "tar.xz"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+
+# ── Graphics & Design ──────────────────────────────────────────────
+
+[[apps]]
+identity = "https://github.com/packerlschupfer/gDiagram"
+name = "gdiagram"
+category = "Graphics & Design"
+description = "Native GTK4 PlantUML and Mermaid viewer/editor."
+tags = ["gui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/packerlschupfer/gDiagram"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "0.1.0"
+noted_artifact_type = "appimage"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/OpenCoworkAI/open-codesign"
+name = "open-codesign"
+category = "Graphics & Design"
+description = "Local AI design workspace for prototypes, slides and PDFs."
+tags = ["gui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/OpenCoworkAI/open-codesign"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "0.1.4"
+noted_artifact_type = "appimage"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/ZSeven-W/openpencil"
+name = "openpencil"
+category = "Graphics & Design"
+description = "AI-native vector design tool."
+tags = ["gui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/ZSeven-W/openpencil"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "0.10.0"
+noted_artifact_type = "appimage"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/tldraw/tldraw"
+name = "tldraw"
+category = "Graphics & Design"
+description = "Infinite canvas application and SDK."
+tags = ["gui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/tldraw/tldraw"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "~5.2.4 inferred from download date"
+noted_artifact_type = "appimage"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+
+# ── Media ──────────────────────────────────────────────
+
+[[apps]]
+identity = "https://github.com/tonhowtf/omniget"
+name = "omniget"
+category = "Media"
+description = "Graphical downloader for videos, courses, music and books."
+tags = ["gui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/tonhowtf/omniget"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+noted_artifact_type = "unknown"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+
+# ── Networking ──────────────────────────────────────────────
+
+[[apps]]
+identity = "https://github.com/VoltiusApp/voltius"
+name = "voltius"
+category = "Networking"
+description = "Local-first SSH, SFTP and serial client."
+tags = ["gui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/VoltiusApp/voltius"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "0.21.1"
+noted_artifact_type = "appimage"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+
+# ── Games ──────────────────────────────────────────────
+
+[[apps]]
+identity = "https://codeberg.org/kedlubnowski/wocogo"
+name = "wocogo"
+category = "Games"
+description = "Construct words from supplied segments; Python TUI game."
+tags = ["tui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://codeberg.org/kedlubnowski/wocogo"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "1.5.0"
+noted_artifact_type = "tar.gz"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+
+[[apps]]
+identity = "https://github.com/lvocanson/wordle_tui"
+name = "wordle_tui"
+category = "Games"
+description = "Wordle in the terminal."
+tags = ["tui"]
+disposition = "considering"
+outcome = "unknown"
+
+[apps.provenance]
+source = "unknown"
+repo = "https://github.com/lvocanson/wordle_tui"
+managed_by_apptrack = false
+
+[apps.evidence]
+imported_from = "~/syncthing/local-bins-appimage-notes.md"
+observed_on = "2026-09-09"
+download_version = "1.2.0"
+noted_artifact_type = "binary"
+uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."

@@ -1,0 +1,18 @@
+/target/
+*.toml.lock
+result
+result-*
+
+# In-house markdown: taskboards, agent contracts, handoffs, notes. README ships.
+*.md
+!README.md
+
+# Scratch
+/config.toml.candidate
+
+# Android sibling build output and machine-local SDK paths
+/apptrack-kot/.gradle/
+/apptrack-kot/build/
+/apptrack-kot/app/build/
+/apptrack-kot/local.properties
+/apptrack-kot/.kotlin/

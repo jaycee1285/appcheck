@@ -1,0 +1,2261 @@
+[[inbox.nix]]
+name = "sqlite"
+description = "Command-line database engine and shell for SQLite."
+disposition = "using"
+package = "sqlite"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 10
+config_expression = "sqlite"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "node-glob"
+description = "Node.js command-line globbing tool."
+disposition = "using"
+package = "node-glob"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 11
+config_expression = "node-glob"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "atuin"
+description = "Shell history manager with searchable synchronization."
+disposition = "using"
+package = "atuin"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 12
+config_expression = "atuin"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "ripgrep-all"
+description = "Recursive search tool that also searches PDFs, archives, and other rich documents."
+disposition = "using"
+package = "ripgrep-all"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 13
+config_expression = "ripgrep-all"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "krep"
+description = "High-performance command-line string search utility."
+disposition = "using"
+package = "krep"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 14
+config_expression = "krep"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "nix-init"
+description = "Command-line generator for Nix package expressions."
+disposition = "using"
+package = "nix-init"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 17
+config_expression = "nix-init"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "television"
+description = "Fast general-purpose fuzzy finder TUI."
+disposition = "using"
+package = "television"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 18
+config_expression = "television"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "navi"
+description = "Interactive command-line cheatsheet browser."
+disposition = "using"
+package = "navi"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 19
+config_expression = "navi"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "cht.sh"
+description = "Command-line client for community-maintained cheatsheets."
+disposition = "using"
+package = "cht-sh"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 20
+config_expression = "cht-sh"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "near-facsimile"
+description = "Tool for finding similar or identical text files in a directory."
+disposition = "using"
+package = "near-facsimile"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 21
+config_expression = "near-facsimile"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "repgrep"
+description = "Interactive command-line find-and-replace tool built around ripgrep."
+disposition = "using"
+package = "repgrep"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 22
+config_expression = "repgrep"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "lstr"
+description = "Fast minimalist directory-tree viewer."
+disposition = "using"
+package = "lstr"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 23
+config_expression = "lstr"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "zoxide"
+description = "Smarter directory-jumping command for the shell."
+disposition = "using"
+package = "zoxide"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 26
+config_expression = "zoxide"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "nnn"
+description = "Fast terminal file manager."
+disposition = "using"
+package = "nnn"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 27
+config_expression = "nnn"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "fclones"
+description = "Command-line duplicate-file finder and remover."
+disposition = "using"
+package = "fclones"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 28
+config_expression = "fclones"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "dust"
+description = "Command-line disk-usage viewer with a visual tree."
+disposition = "using"
+package = "dust"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 29
+config_expression = "dust"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "dua"
+description = "Interactive disk-usage analyzer for the terminal."
+disposition = "using"
+package = "dua"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 30
+config_expression = "dua"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "xplr"
+description = "Hackable terminal file explorer."
+disposition = "using"
+package = "xplr"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 31
+config_expression = "xplr"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "superfile"
+description = "Modern terminal file manager."
+disposition = "using"
+package = "superfile"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 32
+config_expression = "superfile"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "projclean"
+description = "Project dependency and build-artifact cleanup tool."
+disposition = "using"
+package = "projclean"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 33
+config_expression = "projclean"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "lla"
+description = "Feature-rich modern replacement for ls."
+disposition = "using"
+package = "lla"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 34
+config_expression = "lla"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "swpui"
+description = "Ergonomic TUI for fast, case-aware search and replace."
+disposition = "using"
+package = "swpui"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 35
+config_expression = "swpui"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "diskonaut-ng"
+description = "Terminal disk-space navigator."
+disposition = "using"
+package = "diskonaut-ng"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 36
+config_expression = "diskonaut-ng"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "t-rec"
+description = "Terminal recorder that exports animated media."
+disposition = "using"
+package = "t-rec"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 39
+config_expression = "t-rec"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "pay-respects"
+description = "Command-line helper that suggests corrections for failed commands."
+disposition = "using"
+package = "pay-respects"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 40
+config_expression = "pay-respects"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "rsyncy"
+description = "Progress-bar wrapper for rsync."
+disposition = "using"
+package = "rsyncy"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 41
+config_expression = "rsyncy"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "nix-search-cli"
+description = "Command-line search client for Nix packages and options."
+disposition = "using"
+package = "nix-search-cli"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 42
+config_expression = "nix-search-cli"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "ripdrag"
+description = "Drag-and-drop helper for files selected in the terminal."
+disposition = "using"
+package = "ripdrag"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 43
+config_expression = "ripdrag"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "treemd"
+description = "Command-line tool for rendering directory trees as Markdown."
+disposition = "using"
+package = "treemd"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 44
+config_expression = "treemd"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "lutgen"
+description = "Command-line image recoloring and LUT-generation tool."
+disposition = "using"
+package = "lutgen"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 45
+config_expression = "lutgen"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "borgbackup"
+description = "Deduplicating backup program with compression and encryption."
+disposition = "using"
+package = "borgbackup"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 46
+config_expression = "borgbackup"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "jolt"
+description = "Terminal battery and energy monitor."
+disposition = "using"
+package = "jolt-tui"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 47
+config_expression = "jolt-tui"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "rink"
+description = "Unit-aware calculator for the command line."
+disposition = "using"
+package = "rink"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 48
+config_expression = "rink"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "witr"
+description = "Command-line tool that explains why processes are running."
+disposition = "using"
+package = "witr"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 49
+config_expression = "witr"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "gittype"
+description = "Code-typing game that turns source files into typing challenges."
+disposition = "using"
+package = "gittype"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 50
+config_expression = "gittype"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "orbiton"
+description = "Fast terminal text editor."
+disposition = "using"
+package = "orbiton"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 51
+config_expression = "orbiton"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "fsel"
+description = "Fast TUI application launcher and fuzzy finder."
+disposition = "using"
+package = "fsel"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 52
+config_expression = "fsel"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "mg"
+description = "Small Emacs-like terminal text editor."
+disposition = "using"
+package = "mg"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 53
+config_expression = "mg"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "smassh"
+description = "MonkeyType-inspired terminal typing test."
+disposition = "using"
+package = "smassh"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 54
+config_expression = "smassh"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "officecli"
+description = "Command-line tool for creating, reading, and editing office documents."
+disposition = "using"
+package = "officecli"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 55
+config_expression = "officecli"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "zellij"
+description = "Terminal workspace and multiplexer."
+disposition = "using"
+package = "zellij"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 58
+config_expression = "zellij"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "rmux"
+description = "Universal terminal multiplexer with a typed SDK."
+disposition = "using"
+package = "rmux"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 59
+config_expression = "rmux"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "pastel"
+description = "Command-line color manipulation and conversion tool."
+disposition = "using"
+package = "pastel"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 62
+config_expression = "pastel"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "mdt"
+description = "Flake-provided local terminal tool whose exact role needs review."
+disposition = "using"
+package = "mdt.packages.${system}.default"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 63
+config_expression = "mdt.packages.${system}.default"
+scope = "home-manager"
+raw = "Exact package expression comes from the mdt flake input; the local package list does not describe the tool."
+
+[[inbox.nix]]
+name = "papeer"
+description = "Tool for converting websites into ebooks and Markdown."
+disposition = "using"
+package = "papeer"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 66
+config_expression = "papeer"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "defuddle-cli"
+description = "Command-line webpage content extractor."
+disposition = "using"
+package = "pkgs.unstable.defuddle-cli"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 67
+config_expression = "pkgs.unstable.defuddle-cli"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "aerc"
+description = "Terminal email client."
+disposition = "using"
+package = "aerc"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 68
+config_expression = "aerc"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "matcha"
+description = "Terminal email client."
+disposition = "using"
+package = "pkgs.unstable.matcha"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 69
+config_expression = "pkgs.unstable.matcha"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "gogcli"
+description = "Command-line client for Gmail, Calendar, Drive, and other Google APIs."
+disposition = "using"
+package = "pkgs.unstable.gogcli"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 70
+config_expression = "pkgs.unstable.gogcli"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "arjun"
+description = "HTTP parameter discovery tool."
+disposition = "using"
+package = "arjun"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 71
+config_expression = "arjun"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "ketch"
+description = "Fast stateless web-search and scraping CLI for AI agents."
+disposition = "using"
+package = "pkgs.unstable.ketch"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 72
+config_expression = "pkgs.unstable.ketch"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "meli"
+description = "Terminal email client."
+disposition = "using"
+package = "meli"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 73
+config_expression = "meli"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "yt-dlp"
+description = "Command-line audio and video downloader."
+disposition = "using"
+package = "pkgs.unstable.yt-dlp"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 74
+config_expression = "pkgs.unstable.yt-dlp"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "base16changer"
+description = "Flake-provided command-line Base16 theme conversion tool."
+disposition = "using"
+package = "base16changer.packages.${system}.default"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 77
+config_expression = "base16changer.packages.${system}.default"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "kitty"
+description = "GPU-accelerated terminal emulator."
+disposition = "using"
+package = "pkgs.unstable.kitty"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 80
+config_expression = "pkgs.unstable.kitty"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Alacritty"
+description = "GPU-accelerated terminal emulator."
+disposition = "using"
+package = "pkgs.unstable.alacritty"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 81
+config_expression = "pkgs.unstable.alacritty"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "theme.sh"
+description = "Terminal color-scheme selection script."
+disposition = "using"
+package = "theme-sh"
+config_file = "~/repos/config/home/cli-tools.nix"
+config_line = 82
+config_expression = "theme-sh"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "GitHub CLI"
+description = "Official command-line client for GitHub."
+disposition = "using"
+package = "gh"
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 17
+config_expression = "gh"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "SourceGit"
+description = "Open-source graphical Git client."
+disposition = "using"
+package = "sourcegit"
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 18
+config_expression = "sourcegit"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Codeberg CLI"
+description = "Command-line client for Codeberg."
+disposition = "using"
+package = "codeberg-cli"
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 19
+config_expression = "codeberg-cli"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "cloneit"
+description = "CLI for downloading selected GitHub files or directories."
+disposition = "using"
+package = "cloneit"
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 20
+config_expression = "cloneit"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "git-xet"
+description = "Git extension for scalable repositories and large files."
+disposition = "using"
+package = "git-xet"
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 21
+config_expression = "git-xet"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "git-machete"
+description = "Tool for organizing and navigating stacked Git branches."
+disposition = "using"
+package = "git-machete"
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 22
+config_expression = "git-machete"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "git-branchless"
+description = "Workflow and visualization suite for Git branches."
+disposition = "using"
+package = "git-branchless"
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 23
+config_expression = "git-branchless"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "gfold"
+description = "Command-line helper for folding Git branches."
+disposition = "using"
+package = "gfold"
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 24
+config_expression = "gfold"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "cargo-machete"
+description = "Tool for finding unused Rust dependencies."
+disposition = "using"
+package = "cargo-machete"
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 25
+config_expression = "cargo-machete"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "ghgrab"
+description = "Terminal tool for searching and downloading files from GitHub."
+disposition = "using"
+package = "ghgrab"
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 26
+config_expression = "ghgrab"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "degit"
+description = "Tool for copying Git repositories without their history."
+disposition = "using"
+package = "degit"
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 27
+config_expression = "degit"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "gitpulsar"
+description = "Graphical Git client."
+disposition = "using"
+package = "pkgs.unstable.gitpulsar"
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 28
+config_expression = "pkgs.unstable.gitpulsar"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Crush"
+description = "Terminal coding agent from Charm."
+disposition = "using"
+package = "pkgs.unstable.crush"
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 32
+config_expression = "pkgs.unstable.crush"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Warp Terminal"
+description = "Terminal application with integrated developer and AI workflows."
+disposition = "using"
+package = "pkgs.unstable.warp-terminal"
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 33
+config_expression = "pkgs.unstable.warp-terminal"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Flow Control"
+description = "Programmer-focused text editor."
+disposition = "using"
+package = "pkgs.unstable.flow-control"
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 34
+config_expression = "pkgs.unstable.flow-control"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Fresh"
+description = "Terminal text editor with LSP support and TypeScript plugins."
+disposition = "using"
+package = "pkgs.unstable.fresh-editor"
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 35
+config_expression = "pkgs.unstable.fresh-editor"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Whale"
+description = "Terminal-first AI coding agent for DeepSeek."
+disposition = "using"
+package = "pkgs.unstable.whale"
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 36
+config_expression = "pkgs.unstable.whale"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "herdr"
+description = "Terminal multiplexer for coordinating coding agents."
+disposition = "using"
+package = "pkgs.unstable.herdr"
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 39
+config_expression = "pkgs.unstable.herdr"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "ctx7"
+description = "CLI for managing AI coding skills and documentation context."
+disposition = "using"
+package = "pkgs.unstable.ctx7"
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 40
+config_expression = "pkgs.unstable.ctx7"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "bubblewrap"
+description = "Unprivileged sandboxing utility."
+disposition = "using"
+package = "bubblewrap"
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 41
+config_expression = "bubblewrap"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "agent-browser"
+description = "Headless browser automation CLI for AI agents."
+disposition = "using"
+package = "pkgs.unstable.agent-browser"
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 42
+config_expression = "pkgs.unstable.agent-browser"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Obscura"
+description = "Headless browser for AI agents and web scraping."
+disposition = "using"
+package = "pkgs.unstable.obscura"
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 43
+config_expression = "pkgs.unstable.obscura"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "RTK"
+description = "CLI proxy that compresses verbose developer-command output for LLM use."
+disposition = "using"
+package = "pkgs.unstable.rtk"
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 44
+config_expression = "pkgs.unstable.rtk"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "abtop"
+description = "Terminal process monitor for AI coding agents."
+disposition = "using"
+package = "pkgs.unstable.abtop"
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 45
+config_expression = "pkgs.unstable.abtop"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "9router"
+description = "Configured AI routing tool whose package identity is unresolved."
+disposition = "using"
+package = "pkgs.unstable._9router"
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 46
+config_expression = "pkgs.unstable._9router"
+scope = "home-manager"
+raw = "The current pinned nixpkgs evaluation reports that pkgs.unstable._9router is missing; the declaration is preserved exactly for review."
+
+[[inbox.nix]]
+name = "uv"
+description = "Fast Python package and project manager."
+disposition = "using"
+package = "pkgs.unstable.uv"
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 51
+config_expression = "pkgs.unstable.uv"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Playwright"
+description = "Browser automation framework and command-line tooling."
+disposition = "using"
+package = "playwright"
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 52
+config_expression = "playwright"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Playwright MCP"
+description = "Model Context Protocol server for Playwright browser automation."
+disposition = "using"
+package = "playwright-mcp"
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 53
+config_expression = "playwright-mcp"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "snip"
+description = "CLI proxy that filters verbose shell output for LLM workflows."
+disposition = "using"
+package = "pkgs.unstable.snip"
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 54
+config_expression = "pkgs.unstable.snip"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Spider"
+description = "Web crawler and scraper for data-curation workloads."
+disposition = "using"
+package = "pkgs.unstable.spider"
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 55
+config_expression = "pkgs.unstable.spider"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "ast-grep"
+description = "Structural code search and rewriting tool."
+disposition = "using"
+package = "ast-grep"
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 56
+config_expression = "ast-grep"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "VectorCode"
+description = "Code-repository indexer for LLM-assisted development."
+disposition = "using"
+package = "vectorcode"
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 57
+config_expression = "vectorcode"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "SeaGOAT"
+description = "Local-first semantic code search engine."
+disposition = "using"
+package = "seagoat"
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 58
+config_expression = "seagoat"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "just"
+description = "Command runner for project-specific recipes."
+disposition = "using"
+package = "just"
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 59
+config_expression = "just"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "GoTTY"
+description = "Tool for sharing terminal applications as web applications."
+disposition = "using"
+package = "pkgs.unstable.gotty"
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 60
+config_expression = "pkgs.unstable.gotty"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "betterleaks"
+description = "Source-code secret scanner."
+disposition = "using"
+package = "betterleaks"
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 62
+config_expression = "betterleaks"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "LiteParse"
+description = "Fast lightweight document parser."
+disposition = "using"
+package = "pkgs.unstable.liteparse"
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 63
+config_expression = "pkgs.unstable.liteparse"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "llama.cpp"
+description = "Local LLM inference server and command-line tools."
+disposition = "using"
+package = "pkgs.unstable.llama-cpp"
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 67
+config_expression = "pkgs.unstable.llama-cpp"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "llama-swap"
+description = "Model-switching proxy for llama.cpp-compatible servers."
+disposition = "using"
+package = "pkgs.unstable.llama-swap"
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 68
+config_expression = "pkgs.unstable.llama-swap"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "llmserve"
+description = "TUI for serving local LLM models."
+disposition = "using"
+package = "pkgs.unstable.llmserve"
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 69
+config_expression = "pkgs.unstable.llmserve"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "stable-diffusion.cpp"
+description = "Local Stable Diffusion image-generation CLI and server."
+disposition = "using"
+package = "pkgs.unstable.stable-diffusion-cpp"
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 70
+config_expression = "pkgs.unstable.stable-diffusion-cpp"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "LM Studio"
+description = "Desktop application for running and serving local language models."
+disposition = "using"
+package = "pkgs.unstable.lmstudio"
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 71
+config_expression = "pkgs.unstable.lmstudio"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "whichllm"
+description = "Tool for benchmarking and selecting local LLMs for the current hardware."
+disposition = "using"
+package = "pkgs.unstable.whichllm"
+config_file = "~/repos/config/home/dev-tools.nix"
+config_line = 72
+config_expression = "pkgs.unstable.whichllm"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Helium"
+description = "Privacy-focused Chromium-based web browser."
+disposition = "using"
+package = "(helium-nix.packages.${system}.default)"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 10
+config_expression = "(helium-nix.packages.${system}.default)"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Mullvad VPN"
+description = "Desktop VPN client for the Mullvad service."
+disposition = "using"
+package = "pkgs.mullvad-vpn"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 11
+config_expression = "pkgs.mullvad-vpn"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Dillo Plus"
+description = "Lightweight graphical web browser."
+disposition = "using"
+package = "pkgs.dillo-plus"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 12
+config_expression = "pkgs.dillo-plus"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Servo"
+description = "Experimental browser engine and web browser."
+disposition = "using"
+package = "pkgs.unstable.servo"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 13
+config_expression = "pkgs.unstable.servo"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Harper"
+description = "Grammar checker designed for developers and technical writing."
+disposition = "using"
+package = "pkgs.harper"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 16
+config_expression = "pkgs.harper"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "LanguageTool"
+description = "Multilingual spelling, style, and grammar checker."
+disposition = "using"
+package = "pkgs.languagetool"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 17
+config_expression = "pkgs.languagetool"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Flowtime"
+description = "Focus timer for structured work sessions."
+disposition = "using"
+package = "pkgs.flowtime"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 19
+config_expression = "pkgs.flowtime"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Flow State"
+description = "Terminal habit tracker designed for neurodivergent users."
+disposition = "using"
+package = "pkgs.flow-state"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 20
+config_expression = "pkgs.flow-state"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Claws Mail"
+description = "Lightweight graphical email client."
+disposition = "using"
+package = "pkgs.claws-mail"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 21
+config_expression = "pkgs.claws-mail"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Typstwriter"
+description = "Integrated editor for the Typst typesetting system."
+disposition = "using"
+package = "pkgs.typstwriter"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 22
+config_expression = "pkgs.typstwriter"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Text Compare"
+description = "Simple desktop application for comparing two texts."
+disposition = "using"
+package = "pkgs.textcompare"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 23
+config_expression = "pkgs.textcompare"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "VNote"
+description = "Markdown note-taking and knowledge-management application."
+disposition = "using"
+package = "pkgs.vnote"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 24
+config_expression = "pkgs.vnote"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "PDF4QT"
+description = "Open-source PDF editor and viewer."
+disposition = "using"
+package = "pkgs.pdf4qt"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 25
+config_expression = "pkgs.pdf4qt"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Centerpiece"
+description = "Desktop omnibox launcher and search tool."
+disposition = "using"
+package = "pkgs.centerpiece"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 26
+config_expression = "pkgs.centerpiece"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Drawy"
+description = "Infinite-canvas brainstorming and drawing tool."
+disposition = "using"
+package = "pkgs.drawy"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 27
+config_expression = "pkgs.drawy"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Qalculate!"
+description = "Feature-rich desktop calculator."
+disposition = "using"
+package = "pkgs.qalculate-gtk"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 28
+config_expression = "pkgs.qalculate-gtk"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Buffer"
+description = "Minimal scratchpad text editor for disposable notes."
+disposition = "using"
+package = "pkgs.buffer"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 29
+config_expression = "pkgs.buffer"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "VUE"
+description = "Visual Understanding Environment mind-mapping application."
+disposition = "using"
+package = "pkgs.vue"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 30
+config_expression = "pkgs.vue"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Diffuse"
+description = "Graphical text comparison and merge tool."
+disposition = "using"
+package = "pkgs.diffuse"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 32
+config_expression = "pkgs.diffuse"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "TreeSheets"
+description = "Free-form hierarchical data organizer."
+disposition = "using"
+package = "pkgs.treesheets"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 35
+config_expression = "pkgs.treesheets"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Teapot"
+description = "Table editor and planner."
+disposition = "using"
+package = "pkgs.teapot"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 36
+config_expression = "pkgs.teapot"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Gnumeric"
+description = "Desktop spreadsheet application."
+disposition = "using"
+package = "pkgs.gnumeric"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 37
+config_expression = "pkgs.gnumeric"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Calligra"
+description = "KDE office and graphics suite."
+disposition = "using"
+package = "pkgs.kdePackages.calligra"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 38
+config_expression = "pkgs.kdePackages.calligra"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Gram"
+description = "Modern graphical source-code editor."
+disposition = "using"
+package = "pkgs.unstable.gram"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 41
+config_expression = "pkgs.unstable.gram"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Pragtical"
+description = "Practical, lightweight code editor."
+disposition = "using"
+package = "pkgs.pragtical"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 42
+config_expression = "pkgs.pragtical"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "AbiWord"
+description = "Lightweight graphical word processor."
+disposition = "using"
+package = "pkgs.abiword"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 44
+config_expression = "pkgs.abiword"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "CudaText"
+description = "Cross-platform graphical text and code editor."
+disposition = "using"
+package = "pkgs.unstable.cudatext-gtk"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 45
+config_expression = "pkgs.unstable.cudatext-gtk"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "VLC"
+description = "Cross-platform media player."
+disposition = "using"
+package = "pkgs.vlc"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 48
+config_expression = "pkgs.vlc"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Monophony"
+description = "Desktop application for streaming music from YouTube."
+disposition = "using"
+package = "pkgs.monophony"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 49
+config_expression = "pkgs.monophony"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Frog"
+description = "GNOME OCR application for extracting text from images."
+disposition = "using"
+package = "pkgs.gnome-frog"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 50
+config_expression = "pkgs.gnome-frog"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Spotube"
+description = "Open-source Spotify-compatible music client."
+disposition = "using"
+package = "pkgs.spotube"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 51
+config_expression = "pkgs.spotube"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "GTK Pipe Viewer"
+description = "GTK frontend for browsing and playing online videos."
+disposition = "using"
+package = "pkgs.gtk-pipe-viewer"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 52
+config_expression = "pkgs.gtk-pipe-viewer"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Loupe"
+description = "GNOME image viewer."
+disposition = "using"
+package = "pkgs.loupe"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 53
+config_expression = "pkgs.loupe"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Inkscape"
+description = "Vector graphics editor with extension support."
+disposition = "using"
+package = "pkgs.inkscape-with-extensions"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 56
+config_expression = "pkgs.inkscape-with-extensions"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "XnConvert"
+description = "Batch image converter and processor."
+disposition = "using"
+package = "pkgs.xnconvert"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 57
+config_expression = "pkgs.xnconvert"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "cbmp"
+description = "CLI for converting cursor SVG files to PNG."
+disposition = "using"
+package = "pkgs.cbmp"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 58
+config_expression = "pkgs.cbmp"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "NormCap"
+description = "OCR-powered screen capture for copying visible text."
+disposition = "using"
+package = "pkgs.normcap"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 59
+config_expression = "pkgs.normcap"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Lunacy"
+description = "Graphical design application with built-in assets and AI tools."
+disposition = "using"
+package = "pkgs.lunacy"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 60
+config_expression = "pkgs.lunacy"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Conjure"
+description = "Desktop image-transformation utility."
+disposition = "using"
+package = "pkgs.conjure"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 61
+config_expression = "pkgs.conjure"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Lutgen Studio"
+description = "Graphical frontend for applying color palettes and LUTs to images."
+disposition = "using"
+package = "pkgs.lutgen-studio"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 62
+config_expression = "pkgs.lutgen-studio"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Emulsion Palette"
+description = "Desktop color-palette collection manager."
+disposition = "using"
+package = "pkgs.emulsion-palette"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 63
+config_expression = "pkgs.emulsion-palette"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Penpot Desktop"
+description = "Unofficial desktop client for the Penpot design platform."
+disposition = "using"
+package = "pkgs.penpot-desktop"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 64
+config_expression = "pkgs.penpot-desktop"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "GNOME Font Viewer"
+description = "Desktop font preview and installation utility."
+disposition = "using"
+package = "pkgs.gnome-font-viewer"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 65
+config_expression = "pkgs.gnome-font-viewer"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Coulr"
+description = "Color selection utility for developers and designers."
+disposition = "using"
+package = "pkgs.coulr"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 66
+config_expression = "pkgs.coulr"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Contrast"
+description = "WCAG color-contrast checking utility."
+disposition = "using"
+package = "pkgs.contrast"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 67
+config_expression = "pkgs.contrast"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Eyedropper"
+description = "Desktop color picker and formatter."
+disposition = "using"
+package = "pkgs.eyedropper"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 68
+config_expression = "pkgs.eyedropper"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "KOReader"
+description = "Document and ebook reader optimized for eink devices."
+disposition = "using"
+package = "pkgs.koreader"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 71
+config_expression = "pkgs.koreader"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Readest"
+description = "Modern feature-rich ebook reader."
+disposition = "using"
+package = "pkgs.readest"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 72
+config_expression = "pkgs.readest"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Android Platform Tools"
+description = "Command-line tools for communicating with and flashing Android devices."
+disposition = "using"
+package = "pkgs.android-tools"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 76
+config_expression = "pkgs.android-tools"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "QtScrcpy"
+description = "Graphical Android screen-mirroring and control application."
+disposition = "using"
+package = "pkgs.qtscrcpy"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 77
+config_expression = "pkgs.qtscrcpy"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "KDE Connect"
+description = "Device integration and file-sharing suite for KDE and mobile devices."
+disposition = "using"
+package = "pkgs.kdePackages.kdeconnect-kde"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 78
+config_expression = "pkgs.kdePackages.kdeconnect-kde"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "PixelFlasher"
+description = "Graphical utility for flashing and managing Google Pixel phones."
+disposition = "using"
+package = "pkgs.pixelflasher"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 79
+config_expression = "pkgs.pixelflasher"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "rqbit"
+description = "BitTorrent client with command-line and web interfaces."
+disposition = "using"
+package = "pkgs.rqbit"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 82
+config_expression = "pkgs.rqbit"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "qBittorrent"
+description = "Graphical BitTorrent client."
+disposition = "using"
+package = "pkgs.qbittorrent"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 83
+config_expression = "pkgs.qbittorrent"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "LocalSend"
+description = "Local-network file-sharing application."
+disposition = "using"
+package = "pkgs.localsend"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 84
+config_expression = "pkgs.localsend"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Zoom"
+description = "Desktop video-conferencing client."
+disposition = "using"
+package = "pkgs.zoom-us"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 87
+config_expression = "pkgs.zoom-us"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "GNU Typist"
+description = "Command-line touch-typing tutor."
+disposition = "using"
+package = "pkgs.gtypist"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 90
+config_expression = "pkgs.gtypist"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Amphetype"
+description = "Advanced typing-practice application."
+disposition = "using"
+package = "pkgs.amphetype"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 91
+config_expression = "pkgs.amphetype"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Minuet"
+description = "KDE music-education application."
+disposition = "using"
+package = "pkgs.kdePackages.minuet"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 94
+config_expression = "pkgs.kdePackages.minuet"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "llmfit"
+description = "TUI for finding language models suited to the machine's RAM, CPU, and GPU."
+disposition = "using"
+package = "pkgs.llmfit"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 108
+config_expression = "pkgs.llmfit"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "models.dev"
+description = "Local database and CLI for AI model specifications, pricing, and capabilities."
+disposition = "using"
+package = "pkgs.models-dev"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 109
+config_expression = "pkgs.models-dev"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Trigger Rally"
+description = "Fast-paced single-player rally racing game."
+disposition = "using"
+package = "pkgs.unstable.trigger"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 113
+config_expression = "pkgs.unstable.trigger"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Speed Dreams"
+description = "Open-source motorsport simulation game."
+disposition = "using"
+package = "pkgs.unstable.speed-dreams"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 114
+config_expression = "pkgs.unstable.speed-dreams"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "fclones-gui"
+description = "Interactive graphical duplicate-file remover."
+disposition = "using"
+package = "pkgs.fclones-gui"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 117
+config_expression = "pkgs.fclones-gui"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "wl-kbptr"
+description = "Wayland utility for controlling the mouse pointer with the keyboard."
+disposition = "using"
+package = "pkgs.wl-kbptr"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 119
+config_expression = "pkgs.wl-kbptr"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Pika Backup"
+description = "Graphical Borg-based backup application."
+disposition = "using"
+package = "pkgs.pika-backup"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 120
+config_expression = "pkgs.pika-backup"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Szyszka"
+description = "Fast graphical bulk-file renamer."
+disposition = "using"
+package = "pkgs.szyszka"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 121
+config_expression = "pkgs.szyszka"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Meld"
+description = "Graphical file and directory comparison tool."
+disposition = "using"
+package = "pkgs.meld"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 122
+config_expression = "pkgs.meld"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Mousam"
+description = "Lightweight GTK weather application."
+disposition = "using"
+package = "pkgs.unstable.mousam"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 123
+config_expression = "pkgs.unstable.mousam"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Aerion"
+description = "Lightweight open-source graphical email client."
+disposition = "using"
+package = "pkgs.unstable.aerion"
+config_file = "~/repos/config/home/gui-apps.nix"
+config_line = 124
+config_expression = "pkgs.unstable.aerion"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "river"
+description = "Dynamic tiling Wayland compositor."
+disposition = "using"
+package = "river"
+config_file = "~/repos/config/home/system-utilities.nix"
+config_line = 6
+config_expression = "river"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Blueman"
+description = "GTK Bluetooth manager."
+disposition = "using"
+package = "pkgs.unstable.blueman"
+config_file = "~/repos/config/home/system-utilities.nix"
+config_line = 7
+config_expression = "pkgs.unstable.blueman"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "PulseAudio Volume Control"
+description = "Graphical audio mixer and device-control panel."
+disposition = "using"
+package = "pavucontrol"
+config_file = "~/repos/config/home/system-utilities.nix"
+config_line = 8
+config_expression = "pavucontrol"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "brightnessctl"
+description = "Command-line screen and LED brightness controller."
+disposition = "using"
+package = "brightnessctl"
+config_file = "~/repos/config/home/system-utilities.nix"
+config_line = 9
+config_expression = "brightnessctl"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "NetworkManager Applet"
+description = "Desktop network connection manager and tray applet."
+disposition = "using"
+package = "networkmanagerapplet"
+config_file = "~/repos/config/home/system-utilities.nix"
+config_line = 10
+config_expression = "networkmanagerapplet"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "wdisplays"
+description = "Graphical Wayland display configuration tool."
+disposition = "using"
+package = "wdisplays"
+config_file = "~/repos/config/home/system-utilities.nix"
+config_line = 13
+config_expression = "wdisplays"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "wlr-randr"
+description = "Command-line Wayland output configuration tool."
+disposition = "using"
+package = "wlr-randr"
+config_file = "~/repos/config/home/system-utilities.nix"
+config_line = 14
+config_expression = "wlr-randr"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "wl-gammactl"
+description = "Wayland gamma adjustment utility."
+disposition = "using"
+package = "wl-gammactl"
+config_file = "~/repos/config/home/system-utilities.nix"
+config_line = 15
+config_expression = "wl-gammactl"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Ringboard"
+description = "Wayland clipboard manager."
+disposition = "using"
+package = "ringboard-wayland"
+config_file = "~/repos/config/home/system-utilities.nix"
+config_line = 16
+config_expression = "ringboard-wayland"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "QDirStat"
+description = "Graphical disk-usage analyzer."
+disposition = "using"
+package = "qdirstat"
+config_file = "~/repos/config/home/system-utilities.nix"
+config_line = 19
+config_expression = "qdirstat"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "GParted"
+description = "Graphical disk partition editor."
+disposition = "using"
+package = "gparted"
+config_file = "~/repos/config/home/system-utilities.nix"
+config_line = 20
+config_expression = "gparted"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "BleachBit"
+description = "Graphical system-cleaning and privacy utility."
+disposition = "using"
+package = "bleachbit"
+config_file = "~/repos/config/home/system-utilities.nix"
+config_line = 23
+config_expression = "bleachbit"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Collector"
+description = "Desktop staging area for collecting files and folders before moving them."
+disposition = "using"
+package = "collector"
+config_file = "~/repos/config/home/system-utilities.nix"
+config_line = 24
+config_expression = "collector"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Bazaar"
+description = "Flathub-first application store for GNOME."
+disposition = "using"
+package = "bazaar"
+config_file = "~/repos/config/home/system-utilities.nix"
+config_line = 25
+config_expression = "bazaar"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "PeaZip"
+description = "Graphical archive manager."
+disposition = "using"
+package = "peazip"
+config_file = "~/repos/config/home/system-utilities.nix"
+config_line = 26
+config_expression = "peazip"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "USBImager"
+description = "Graphical utility for writing disk images to removable media."
+disposition = "using"
+package = "usbimager"
+config_file = "~/repos/config/home/system-utilities.nix"
+config_line = 29
+config_expression = "usbimager"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "ThemeChanger"
+description = "Desktop utility for switching Linux themes."
+disposition = "using"
+package = "themechanger"
+config_file = "~/repos/config/home/system-utilities.nix"
+config_line = 32
+config_expression = "themechanger"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Waybox"
+description = "Openbox-style Wayland compositor."
+disposition = "using"
+package = "waybox"
+config_file = "~/repos/config/home/system-utilities.nix"
+config_line = 34
+config_expression = "waybox"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "wl-color-picker"
+description = "Wayland screen color picker."
+disposition = "using"
+package = "wl-color-picker"
+config_file = "~/repos/config/home/system-utilities.nix"
+config_line = 35
+config_expression = "wl-color-picker"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "wl-clip-persist"
+description = "Wayland clipboard persistence utility."
+disposition = "using"
+package = "wl-clip-persist"
+config_file = "~/repos/config/home/system-utilities.nix"
+config_line = 36
+config_expression = "wl-clip-persist"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "wob"
+description = "Lightweight Wayland overlay bar for volume and brightness feedback."
+disposition = "using"
+package = "wob"
+config_file = "~/repos/config/home/system-utilities.nix"
+config_line = 37
+config_expression = "wob"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "Syncthing"
+description = "Continuous peer-to-peer file synchronization service."
+disposition = "using"
+package = "syncthing"
+config_file = "~/repos/config/home/user-services.nix"
+config_line = 49
+config_expression = "syncthing"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "pCloud"
+description = "Desktop client for the pCloud storage service."
+disposition = "using"
+package = "pkgs.unstable.pcloud"
+config_file = "~/repos/config/home/user-services.nix"
+config_line = 50
+config_expression = "pkgs.unstable.pcloud"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "rclone"
+description = "Command-line file synchronization and cloud-storage manager."
+disposition = "using"
+package = "rclone"
+config_file = "~/repos/config/home/user-services.nix"
+config_line = 51
+config_expression = "rclone"
+scope = "home-manager"
+
+[[inbox.nix]]
+name = "vmtouch"
+description = "Command-line tool for inspecting and controlling the filesystem cache."
+disposition = "using"
+package = "vmtouch"
+config_file = "~/repos/config/modules/system-packages.nix"
+config_line = 19
+config_expression = "vmtouch"
+scope = "nixos"
+
+[[inbox.nix]]
+name = "Dconf Editor"
+description = "Graphical editor for desktop application settings stored in dconf."
+disposition = "using"
+package = "dconf-editor"
+config_file = "~/repos/config/modules/system-packages.nix"
+config_line = 27
+config_expression = "dconf-editor"
+scope = "nixos"
+
+[[inbox.nix]]
+name = "eza"
+description = "Modern command-line file listing tool."
+disposition = "using"
+package = "eza"
+config_file = "~/repos/config/modules/system-packages.nix"
+config_line = 28
+config_expression = "eza"
+scope = "nixos"
+
+[[inbox.nix]]
+name = "wget"
+description = "Command-line network downloader."
+disposition = "using"
+package = "wget"
+config_file = "~/repos/config/modules/system-packages.nix"
+config_line = 29
+config_expression = "wget"
+scope = "nixos"
+
+[[inbox.nix]]
+name = "Git"
+description = "Distributed version-control command-line suite."
+disposition = "using"
+package = "git"
+config_file = "~/repos/config/modules/system-packages.nix"
+config_line = 30
+config_expression = "git"
+scope = "nixos"
+
+[[inbox.nix]]
+name = "p7zip"
+description = "Command-line 7-Zip archive tools."
+disposition = "using"
+package = "p7zip"
+config_file = "~/repos/config/modules/system-packages.nix"
+config_line = 31
+config_expression = "p7zip"
+scope = "nixos"
+
+[[inbox.nix]]
+name = "unrar"
+description = "Command-line RAR archive extraction utility."
+disposition = "using"
+package = "unrar"
+config_file = "~/repos/config/modules/system-packages.nix"
+config_line = 32
+config_expression = "unrar"
+scope = "nixos"
+
+[[inbox.nix]]
+name = "nixos-generators"
+description = "Tool for generating NixOS images for multiple platforms."
+disposition = "using"
+package = "nixos-generators"
+config_file = "~/repos/config/modules/system-packages.nix"
+config_line = 33
+config_expression = "nixos-generators"
+scope = "nixos"
+
+[[inbox.nix]]
+name = "Home Manager"
+description = "Declarative user-environment manager for Nix."
+disposition = "using"
+package = "home-manager"
+config_file = "~/repos/config/modules/system-packages.nix"
+config_line = 34
+config_expression = "home-manager"
+scope = "nixos"
+
+[[inbox.nix]]
+name = "GNOME Keyring"
+description = "Credential and secret storage service with user-facing management tools."
+disposition = "using"
+package = "gnome-keyring"
+config_file = "~/repos/config/modules/system-packages.nix"
+config_line = 35
+config_expression = "gnome-keyring"
+scope = "nixos"
+
+[[inbox.nix]]
+name = "jq"
+description = "Command-line JSON processor."
+disposition = "using"
+package = "jq"
+config_file = "~/repos/config/modules/system-packages.nix"
+config_line = 37
+config_expression = "jq"
+scope = "nixos"
+
+[[inbox.nix]]
+name = "KDialog"
+description = "Command-line tool for displaying KDE dialog boxes."
+disposition = "using"
+package = "kdePackages.kdialog"
+config_file = "~/repos/config/modules/system-packages.nix"
+config_line = 38
+config_expression = "kdePackages.kdialog"
+scope = "nixos"
+
+[[inbox.nix]]
+name = "nh"
+description = "Friendly command-line interface for NixOS and Home Manager operations."
+disposition = "using"
+package = "nh"
+config_file = "~/repos/config/modules/system-packages.nix"
+config_line = 42
+config_expression = "nh"
+scope = "nixos"
+
+[[inbox.nix]]
+name = "System Config Printer"
+description = "Graphical printer configuration utility."
+disposition = "using"
+package = "system-config-printer"
+config_file = "~/repos/config/modules/system-packages.nix"
+config_line = 45
+config_expression = "system-config-printer"
+scope = "nixos"
+
+[[inbox.nix]]
+name = "fzf"
+description = "General-purpose command-line fuzzy finder."
+disposition = "using"
+package = "fzf"
+config_file = "~/repos/config/modules/system-packages.nix"
+config_line = 48
+config_expression = "fzf"
+scope = "nixos"
+
+[[inbox.nix]]
+name = "skim"
+description = "General-purpose fuzzy finder for the terminal."
+disposition = "using"
+package = "pkgs.unstable.skim"
+config_file = "~/repos/config/modules/system-packages.nix"
+config_line = 49
+config_expression = "pkgs.unstable.skim"
+scope = "nixos"
+
+[[inbox.nix]]
+name = "LabWC Tweaks"
+description = "Graphical configuration utility for the LabWC compositor."
+disposition = "using"
+package = "pkgs.unstable.labwc-tweaks-gtk"
+config_file = "~/repos/config/modules/system-packages.nix"
+config_line = 55
+config_expression = "pkgs.unstable.labwc-tweaks-gtk"
+scope = "nixos"
+
+[[inbox.nix]]
+name = "LabWC Menu Generator"
+description = "Application-menu generator for the LabWC compositor."
+disposition = "using"
+package = "pkgs.unstable.labwc-menu-generator"
+config_file = "~/repos/config/modules/system-packages.nix"
+config_line = 56
+config_expression = "pkgs.unstable.labwc-menu-generator"
+scope = "nixos"
+
+[[inbox.nix]]
+name = "gowall"
+description = "Command-line wallpaper color conversion and theming tool."
+disposition = "using"
+package = "gowall"
+config_file = "~/repos/config/modules/system-packages.nix"
+config_line = 58
+config_expression = "gowall"
+scope = "nixos"
+
+[[inbox.nix]]
+name = "wlr-layout-ui"
+description = "Graphical display-layout utility for wlroots compositors."
+disposition = "using"
+package = "wlr-layout-ui"
+config_file = "~/repos/config/modules/system-packages.nix"
+config_line = 59
+config_expression = "wlr-layout-ui"
+scope = "nixos"
+
+[[inbox.nix]]
+name = "wlopm"
+description = "Command-line Wayland output power manager."
+disposition = "using"
+package = "wlopm"
+config_file = "~/repos/config/modules/system-packages.nix"
+config_line = 60
+config_expression = "wlopm"
+scope = "nixos"
+
+[[inbox.nix]]
+name = "Fuzzel"
+description = "Wayland application launcher and dmenu replacement."
+disposition = "using"
+package = "fuzzel"
+config_file = "~/repos/config/modules/system-packages.nix"
+config_line = 63
+config_expression = "fuzzel"
+scope = "nixos"
+
+[[inbox.nix]]
+name = "cliphist"
+description = "Wayland clipboard history manager."
+disposition = "using"
+package = "cliphist"
+config_file = "~/repos/config/modules/system-packages.nix"
+config_line = 64
+config_expression = "cliphist"
+scope = "nixos"
+
+[[inbox.nix]]
+name = "wl-clipboard"
+description = "Wayland command-line clipboard tools."
+disposition = "using"
+package = "wl-clipboard"
+config_file = "~/repos/config/modules/system-packages.nix"
+config_line = 65
+config_expression = "wl-clipboard"
+scope = "nixos"
+
+[[inbox.nix]]
+name = "ripgrep"
+description = "Fast recursive command-line text search tool."
+disposition = "using"
+package = "ripgrep"
+config_file = "~/repos/config/modules/system-packages.nix"
+config_line = 66
+config_expression = "ripgrep"
+scope = "nixos"
+
+[[inbox.nix]]
+name = "Mako"
+description = "Wayland notification daemon."
+disposition = "using"
+package = "mako"
+config_file = "~/repos/config/modules/system-packages.nix"
+config_line = 70
+config_expression = "mako"
+scope = "nixos"
+
+[[inbox.nix]]
+name = "awww"
+description = "Animated wallpaper daemon for Wayland."
+disposition = "using"
+package = "awww"
+config_file = "~/repos/config/modules/system-packages.nix"
+config_line = 74
+config_expression = "awww"
+scope = "nixos"
+
+[[inbox.nix]]
+name = "Wayscriber"
+description = "Wayland screen annotation utility."
+disposition = "using"
+package = "wayscriber"
+config_file = "~/repos/config/modules/system-packages.nix"
+config_line = 77
+config_expression = "wayscriber"
+scope = "nixos"
+
+[[inbox.nix]]
+name = "swaylock-effects"
+description = "Wayland screen locker with visual effects."
+disposition = "using"
+package = "swaylock-effects"
+config_file = "~/repos/config/modules/system-packages.nix"
+config_line = 80
+config_expression = "swaylock-effects"
+scope = "nixos"
+
+[[inbox.nix]]
+name = "swayidle"
+description = "Idle-management daemon for Wayland compositors."
+disposition = "using"
+package = "swayidle"
+config_file = "~/repos/config/modules/system-packages.nix"
+config_line = 81
+config_expression = "swayidle"
+scope = "nixos"
+
+[[inbox.nix]]
+name = "WireGuard Tools"
+description = "Command-line tools for configuring WireGuard VPN tunnels."
+disposition = "using"
+package = "wireguard-tools"
+config_file = "~/repos/config/modules/system-packages.nix"
+config_line = 94
+config_expression = "wireguard-tools"
+scope = "nixos"
+
+[[inbox.nix]]
+name = "curl"
+description = "Command-line data-transfer client for URLs."
+disposition = "using"
+package = "curl"
+config_file = "~/repos/config/modules/system-packages.nix"
+config_line = 96
+config_expression = "curl"
+scope = "nixos"
