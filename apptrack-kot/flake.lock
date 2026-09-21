@@ -1,16 +1,24 @@
 {
   "nodes": {
-    "apptrack-src": {
-      "flake": false,
+    "appcheck": {
+      "inputs": {
+        "nixpkgs": [
+          "config",
+          "nixpkgs"
+        ]
+      },
       "locked": {
-        "lastModified": 1789854838,
-        "narHash": "sha256-kDl/FufZZ1jVRfktnE2B5py/lFOir21NzQh3786o0JY=",
-        "path": "/home/john/repos/apptrack",
-        "type": "path"
+        "lastModified": 1790017967,
+        "narHash": "sha256-6qoziYJNI8JSvXApAzNiW0lnfjqhXaYU/vBOS5t3z0o=",
+        "owner": "jaycee1285",
+        "repo": "appcheck",
+        "rev": "1fc513c5238eb978d9fbb0f54e7df108b8d7311f",
+        "type": "github"
       },
       "original": {
-        "path": "/home/john/repos/apptrack",
-        "type": "path"
+        "owner": "jaycee1285",
+        "repo": "appcheck",
+        "type": "github"
       }
     },
     "base16changer": {
@@ -49,7 +57,7 @@
     },
     "config": {
       "inputs": {
-        "apptrack-src": "apptrack-src",
+        "appcheck": "appcheck",
         "base16changer": "base16changer",
         "clockstop-src": "clockstop-src",
         "helium-nix": "helium-nix",
@@ -63,8 +71,8 @@
         "walls": "walls"
       },
       "locked": {
-        "lastModified": 1789996677,
-        "narHash": "sha256-gF3P4/3dAHHKMfKjRUSO7/a9UYIT8/Ch2TmfWE7DGIY=",
+        "lastModified": 1790024567,
+        "narHash": "sha256-vfLMrd0t/gO6s7MhumP0sDTRgg4qSTgZK9eAyx+YoiI=",
         "path": "/home/john/repos/config",
         "type": "path"
       },

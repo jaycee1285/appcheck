@@ -1,5 +1,5 @@
 {
-  description = "AppTrack — personal application ledger (TUI) and the appcheck launcher";
+  description = "AppTrack — personal application ledger (TUI)";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -19,8 +19,8 @@
           default = pkgs.callPackage ./package.nix { };
         });
 
-      # Builds apptrack against the consumer's pkgs at nixos-rebuild time and adds
-      # the 87x27 Kitty `appcheck` launcher. Config: imports = [ appcheck.homeManagerModules.default ];
+      # Builds apptrack against the consumer's pkgs at nixos-rebuild time.
+      # Config: imports = [ appcheck.homeManagerModules.default ];
       homeManagerModules.default = ./home-manager.nix;
 
       devShells = forAllSystems (system:
