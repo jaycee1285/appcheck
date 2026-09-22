@@ -27,7 +27,7 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.activity:activity-compose:1.8.2")
     implementation("androidx.documentfile:documentfile:1.0.0")
-    implementation("org.yaml:snakeyaml:2.4")
+    implementation("org.tomlj:tomlj:1.1.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
     testImplementation("junit:junit:4.13.2")
 }
