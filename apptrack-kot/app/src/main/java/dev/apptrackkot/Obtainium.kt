@@ -42,15 +42,36 @@ data class ObtainiumExport(
     val file: String,
     val bytes: Long,
     val apps: List<ObtainiumApp>,
-    /** Alphabetical, Uncategorized last (when any app has no category). */
-    val categories: List<ObtainiumCategory>,
+    /** Every category Obtainium knows with its colour, whether or not an app uses it. */
+    val colors: Map<String, Long>,
 ) {
     val installed: Int get() = apps.count { it.installedVersion != null }
+
+    /** Alphabetical (Obtainium's own order, pages/apps.dart), Uncategorized last. */
+    val categories: List<ObtainiumCategory> by lazy {
+        (colors.keys + apps.flatMap { it.categories })
+            .distinct()
+            .filter { name -> apps.any { name in it.categories } }
+            .sortedWith(String.CASE_INSENSITIVE_ORDER)
+            .map { ObtainiumCategory(it, colors[it]) } +
+            if (apps.any { it.categories.isEmpty() }) listOf(ObtainiumCategory(UNCATEGORIZED, null)) else emptyList()
+    }
+
+    /** Every category name that can be assigned (Obtainium's own list plus any in use). */
+    val assignable: List<String> by lazy {
+        (colors.keys + apps.flatMap { it.categories }).distinct().sortedWith(String.CASE_INSENSITIVE_ORDER)
+    }
+
     fun appsIn(category: String) = if (category == UNCATEGORIZED) {
         apps.filter { it.categories.isEmpty() }
     } else {
         apps.filter { category in it.categories }
     }
+
+    /** The same export with pending category edits applied, for display. */
+    fun withPending(pending: Map<String, List<String>>): ObtainiumExport =
+        if (pending.isEmpty()) this
+        else copy(apps = apps.map { a -> pending[a.id]?.let { a.copy(categories = it) } ?: a })
 
     companion object {
         const val UNCATEGORIZED = "Uncategorized"
@@ -72,19 +93,12 @@ object Obtainium {
 
         val colors = HashMap<String, Long>()
         root.optJSONObject("settings")?.let { settings ->
-            // settings.categories is itself a JSON string: {"name": ARGB, …}
-            nullableString(settings, "categories")?.let { encoded ->
-                val table = JSONObject(encoded)
-                for (key in table.keys()) colors[key] = table.getLong(key)
-            }
+            // settings.categories is a JSON string in schema v1 and v2; tolerate a plain object.
+            val table = settings.optJSONObject("categories")
+                ?: nullableString(settings, "categories")?.let { JSONObject(it) }
+            if (table != null) for (key in table.keys()) colors[key] = table.getLong(key)
         }
-        val names = (colors.keys + apps.flatMap { it.categories })
-            .distinct()
-            .filter { name -> apps.any { name in it.categories } }
-            .sortedWith(String.CASE_INSENSITIVE_ORDER)
-        val categories = names.map { ObtainiumCategory(it, colors[it]) } +
-            if (apps.any { it.categories.isEmpty() }) listOf(ObtainiumCategory(ObtainiumExport.UNCATEGORIZED, null)) else emptyList()
-        return ObtainiumExport(file, bytes, apps, categories)
+        return ObtainiumExport(file, bytes, apps, colors)
     }
 
     private fun app(o: JSONObject, index: Int, file: String): ObtainiumApp {
@@ -115,6 +129,80 @@ object Obtainium {
             changeLog = nullableString(o, "changeLog"),
             raw = o.toString(2),
         )
+    }
+
+    /** The file the phone writes for John to import back into Obtainium. */
+    const val IMPORT_FILE = "obtainium-import.json"
+
+    /** Schema the installed Obtainium writes and accepts (apps_provider_import_export.dart). */
+    private const val SCHEMA_VERSION = 2
+
+    /**
+     * An apps-only import document: each app's own export record re-emitted with
+     * `categories` replaced. No `settings` block, so importing cannot overwrite
+     * Obtainium's preferences (_applyImportedSettings writes back every key it finds).
+     */
+    fun importDocument(edits: Map<String, List<String>>, export: ObtainiumExport, exportedAt: String): String {
+        val byId = export.apps.associateBy { it.id }
+        val apps = JSONArray()
+        for ((id, categories) in edits.entries.sortedBy { it.key }) {
+            val app = byId[id] ?: throw ExportException("$id is not in ${export.file}; refusing to invent a record.")
+            val record = JSONObject(app.raw)
+            record.put("categories", JSONArray(categories))
+            apps.put(record)
+        }
+        val document = JSONObject()
+            .put("schemaVersion", SCHEMA_VERSION)
+            .put("exportedAt", exportedAt)
+            .put("apps", apps)
+            .toString(2)
+        verifyImport(document, edits, export)
+        return document
+    }
+
+    /** Every field except `categories` must survive byte-identically. */
+    private fun verifyImport(document: String, edits: Map<String, List<String>>, export: ObtainiumExport) {
+        val written = JSONObject(document).optJSONArray("apps")
+            ?: throw ExportException("Refusing to write: the import document has no apps array.")
+        if (written.length() != edits.size) {
+            throw ExportException("Refusing to write: ${written.length()} records for ${edits.size} edits.")
+        }
+        val byId = export.apps.associateBy { it.id }
+        for (i in 0 until written.length()) {
+            val record = written.getJSONObject(i)
+            val id = record.getString("id")
+            val source = JSONObject(byId.getValue(id).raw)
+            val wantCategories = edits.getValue(id)
+            val got = record.getJSONArray("categories").let { a -> (0 until a.length()).map { a.getString(it) } }
+            if (got != wantCategories) {
+                throw ExportException("Refusing to write: $id categories came out as $got, expected $wantCategories.")
+            }
+            val keys = source.keys().asSequence().toSet()
+            if (keys != record.keys().asSequence().toSet()) {
+                throw ExportException("Refusing to write: $id field set changed.")
+            }
+            for (key in keys - "categories") {
+                if (record.get(key).toString() != source.get(key).toString()) {
+                    throw ExportException("Refusing to write: $id field \"$key\" changed.")
+                }
+            }
+        }
+    }
+
+    /** Reads back the import file, dropping edits the export has already caught up with. */
+    fun pending(text: String, export: ObtainiumExport): Map<String, List<String>> {
+        val apps = JSONObject(text).optJSONArray("apps") ?: return emptyMap()
+        val byId = export.apps.associateBy { it.id }
+        val found = LinkedHashMap<String, List<String>>()
+        for (i in 0 until apps.length()) {
+            val record = apps.getJSONObject(i)
+            val id = nullableString(record, "id") ?: continue
+            val categories = record.optJSONArray("categories")
+                ?.let { a -> (0 until a.length()).map { a.getString(it) } } ?: emptyList()
+            val current = byId[id] ?: continue
+            if (categories != current.categories) found[id] = categories
+        }
+        return found
     }
 
     /** optString turns JSON null into the text "null"; this doesn't. */

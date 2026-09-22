@@ -5,6 +5,9 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.os.SystemClock
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import android.provider.DocumentsContract
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
@@ -16,6 +19,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -83,12 +88,22 @@ class MainActivity : ComponentActivity() {
 
 /** The export being projected plus the ledger text it was loaded against. */
 data class Loaded(
+    val tree: Uri,
     val export: ObtainiumExport,
     val ledgerUri: Uri,
     val ledgerText: String,
     val overlays: Map<String, Overlay>,
+    /** Category edits written to obtainium-import.json but not yet imported into Obtainium. */
+    val pending: Map<String, List<String>> = emptyMap(),
+    val importUri: Uri? = null,
 ) {
     fun overlay(id: String) = overlays[id] ?: Overlay()
+
+    /** What the screen shows: the export with pending category edits applied. */
+    val display: ObtainiumExport by lazy { export.withPending(pending) }
+
+    fun categoriesOf(id: String): List<String> =
+        pending[id] ?: export.apps.firstOrNull { it.id == id }?.categories ?: emptyList()
 }
 
 @Composable
@@ -146,7 +161,7 @@ fun AppTrackKotApp() {
         // Surface supplies the content color; bare Text defaults to black on the dark window.
         Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
             val current = loaded
-            val app = selected?.let { id -> current?.export?.apps?.firstOrNull { it.id == id } }
+            val app = selected?.let { id -> current?.display?.apps?.firstOrNull { it.id == id } }
             BackHandler(enabled = app != null) { selected = null }
             if (app != null && current != null) {
                 Detail(
@@ -232,12 +247,15 @@ private suspend fun load(
             report(VaultState.Loading, "5/6 · parse ledger", "Parsing apptrack.toml [[inbox.android]]…")
             val overlays = Ledger.overlays(ledgerText)
             val parsedLedger = SystemClock.elapsedRealtime()
+            // Category edits written earlier but not yet imported back into Obtainium.
+            val importChild = root[Obtainium.IMPORT_FILE]?.takeIf { !it.isDir }
+            val pending = importChild?.let { Obtainium.pending(readText(context, it.uri), export) } ?: emptyMap()
             report(
                 VaultState.Loaded,
-                "6/6 · ${export.apps.size} apps · ${overlays.size} notes",
+                "6/6 · ${export.apps.size} apps · ${overlays.size} notes · ${pending.size} pending",
                 "$name · locate ${located - started} ms · read ${read - located} ms · " +
                     "parse export ${parsedExport - read} ms · ledger ${parsedLedger - parsedExport} ms",
-                Loaded(export, ledgerFile.uri, ledgerText, overlays),
+                Loaded(tree, export, ledgerFile.uri, ledgerText, overlays, pending, importChild?.uri),
             )
             null
         }
@@ -270,6 +288,39 @@ private suspend fun save(context: Context, loaded: Loaded, app: ObtainiumApp, ov
         if (written != next) throw LedgerException("apptrack.toml read back differently after writing; check it on the desktop.")
         loaded.copy(ledgerText = written, overlays = Ledger.overlays(written))
     }
+
+/**
+ * Rewrites obtainium-import.json with every pending category edit, then reads it back.
+ * Obtainium's import merges by id and never deletes, so one accumulating file is one import.
+ */
+private suspend fun saveCategories(
+    context: Context,
+    loaded: Loaded,
+    app: ObtainiumApp,
+    categories: List<String>,
+): Loaded = withContext(Dispatchers.IO) {
+    val source = loaded.export.apps.first { it.id == app.id }
+    val edits = LinkedHashMap(loaded.pending)
+    if (categories == source.categories) edits.remove(app.id) else edits[app.id] = categories
+    val document = Obtainium.importDocument(
+        edits = edits,
+        export = loaded.export,
+        exportedAt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS")
+            .withZone(ZoneId.systemDefault())
+            .format(Instant.now()),
+    )
+    val uri = loaded.importUri ?: DocumentsContract.createDocument(
+        context.contentResolver,
+        DocumentsContract.buildDocumentUriUsingTree(loaded.tree, DocumentsContract.getTreeDocumentId(loaded.tree)),
+        "application/json",
+        Obtainium.IMPORT_FILE,
+    ) ?: throw ExportException("Could not create ${Obtainium.IMPORT_FILE} in the Syncthing root.")
+    context.contentResolver.openOutputStream(uri, "wt")?.use { it.write(document.toByteArray()) }
+        ?: throw ExportException("Could not open ${Obtainium.IMPORT_FILE} for writing.")
+    val written = readText(context, uri)
+    if (written != document) throw ExportException("${Obtainium.IMPORT_FILE} read back differently after writing.")
+    loaded.copy(pending = Obtainium.pending(written, loaded.export), importUri = uri)
+}
 
 /** ui.rs fuzzy_score: substring position, else in-order character match scored past 1000. */
 private fun fuzzyScore(query: String, text: String): Int? {
@@ -326,7 +377,7 @@ fun Home(
     fun visible(app: ObtainiumApp) =
         filters.isEmpty() || loaded?.overlay(app.id)?.disposition?.key in filters
 
-    val export = loaded?.export
+    val export = loaded?.display
     val rows: List<ListRow> = when {
         export == null -> emptyList()
         query.isNotBlank() -> export.apps
@@ -491,7 +542,6 @@ private fun Detail(
         "package id" to app.id,
         "author" to app.author.ifEmpty { "none" },
         "source" to app.url.ifEmpty { "none" },
-        "categories" to app.categories.joinToString(", ").ifEmpty { ObtainiumExport.UNCATEGORIZED },
         "installed version" to (app.installedVersion ?: "not installed"),
         "latest version" to (app.latestVersion ?: "unknown"),
         "release date" to Obtainium.formatMicros(app.releaseDateMicros),
@@ -529,6 +579,8 @@ private fun Detail(
             Text("Edit description / disposition")
         }
         HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+        Categories(app, loaded, onSaved)
+        HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
         for ((label, value) in fields) {
             Label(label)
             Text(value, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 8.dp))
@@ -558,6 +610,73 @@ private fun Detail(
             onSaved = { editing = false; onSaved(it) },
             onStale = onStale,
         )
+    }
+}
+
+/**
+ * Obtainium's categories for this app. Saving rewrites obtainium-import.json with every
+ * pending edit; Obtainium applies them when John imports that file.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun Categories(app: ObtainiumApp, loaded: Loaded, onSaved: (Loaded) -> Unit) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val source = loaded.export.apps.first { it.id == app.id }.categories
+    var chosen by remember(app.id, loaded.pending) { mutableStateOf(loaded.categoriesOf(app.id)) }
+    var saving by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    val changed = chosen.sorted() != source.sorted()
+
+    Label("categories (Obtainium)")
+    if (loaded.export.assignable.isEmpty()) {
+        Text("Obtainium has no categories yet.", style = MaterialTheme.typography.bodyMedium)
+        return
+    }
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        for (name in loaded.export.assignable) {
+            val on = name in chosen
+            FilterChip(
+                selected = on,
+                onClick = { chosen = if (on) chosen - name else chosen + name },
+                label = { Text(name) },
+                modifier = Modifier.heightIn(min = 48.dp),
+            )
+        }
+    }
+    if (chosen.isEmpty()) {
+        Text(ObtainiumExport.UNCATEGORIZED, style = MaterialTheme.typography.bodySmall, color = Muted)
+    }
+    if (loaded.pending.containsKey(app.id)) {
+        Text(
+            "pending import: ${Obtainium.IMPORT_FILE} holds ${loaded.pending.size} edit(s). " +
+                "Import that file in Obtainium (Import/Export → Import), then export again.",
+            style = MaterialTheme.typography.bodySmall,
+            color = Muted,
+            modifier = Modifier.padding(top = 8.dp),
+        )
+    }
+    if (changed) {
+        Button(
+            enabled = !saving,
+            onClick = {
+                saving = true
+                error = null
+                scope.launch {
+                    try {
+                        onSaved(saveCategories(context, loaded, app, chosen))
+                    } catch (e: Throwable) {
+                        error = e.stackTraceToString().take(1500)
+                    }
+                    saving = false
+                }
+            },
+            modifier = Modifier.padding(top = 8.dp).heightIn(min = 48.dp),
+        ) { Text("Save to ${Obtainium.IMPORT_FILE}") }
+    }
+    if (saving) LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(top = 8.dp))
+    error?.let {
+        Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
     }
 }
 
