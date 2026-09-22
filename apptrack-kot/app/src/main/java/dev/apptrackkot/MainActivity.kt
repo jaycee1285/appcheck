@@ -12,7 +12,9 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,14 +22,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -53,7 +56,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.documentfile.provider.DocumentFile
+import android.provider.DocumentsContract
 import dev.apptrackkot.ui.AppTrackKotTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -79,7 +82,7 @@ fun AppTrackKotApp() {
     var state by remember { mutableStateOf(VaultState.Unchecked) }
     var step by remember { mutableStateOf("0/5 · not started") }
     var detail by remember { mutableStateOf("") }
-    var snapshot by remember { mutableStateOf<VaultSnapshot?>(null) }
+    var export by remember { mutableStateOf<ObtainiumExport?>(null) }
     var tree by remember {
         mutableStateOf<Uri?>(prefs.getString(treeKey, null)?.let { Uri.parse(it) })
     }
@@ -112,11 +115,11 @@ fun AppTrackKotApp() {
         if (current == null) {
             state = VaultState.RequestingPermission
             step = "1/5 · folder permission"
-            detail = "Grant global file access: pick the Syncthing folder that holds apptrack.toml."
+            detail = "Grant global file access: pick the Syncthing root folder, where Obtainium writes obtainium-export-*.json."
         } else {
-            load(context, current) { s, st, d, snap ->
+            load(context, current) { s, st, d, loaded ->
                 state = s; step = st; detail = d
-                if (snap != null) snapshot = snap
+                if (loaded != null) export = loaded
             }
         }
     }
@@ -124,19 +127,19 @@ fun AppTrackKotApp() {
     AppTrackKotTheme {
         // Surface supplies the content color; bare Text defaults to black on the dark window.
         Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
-            val snap = snapshot
-            val app = selected?.let { id -> snap?.apps?.firstOrNull { it.identity == id } }
+            val current = export
+            val app = selected?.let { id -> current?.apps?.firstOrNull { it.id == id } }
             BackHandler(enabled = app != null) { selected = null }
-            if (app != null) {
-                Detail(app, onBack = { selected = null })
+            if (app != null && current != null) {
+                Detail(app, current, onBack = { selected = null })
             } else {
                 Home(
                     state = state,
                     step = step,
                     detail = detail,
-                    snapshot = snap,
+                    export = current,
                     onRetry = { chooseFolder.launch(null) },
-                    onOpen = { selected = it.identity },
+                    onOpen = { selected = it.id },
                 )
             }
         }
@@ -146,44 +149,61 @@ fun AppTrackKotApp() {
 private suspend fun load(
     context: Context,
     tree: Uri,
-    onResult: (VaultState, String, String, VaultSnapshot?) -> Unit,
+    onResult: (VaultState, String, String, ObtainiumExport?) -> Unit,
 ) {
-    suspend fun report(s: VaultState, step: String, d: String, snap: VaultSnapshot? = null) =
-        withContext(Dispatchers.Main) { onResult(s, step, d, snap) }
+    suspend fun report(s: VaultState, step: String, d: String, loaded: ObtainiumExport? = null) =
+        withContext(Dispatchers.Main) { onResult(s, step, d, loaded) }
     try {
         val started = SystemClock.elapsedRealtime()
         report(VaultState.Loading, "2/5 · open folder", "Opening Syncthing folder…")
-        val result = withContext(Dispatchers.IO) {
-            val root = DocumentFile.fromTreeUri(context, tree)
-                ?: return@withContext "Folder unavailable. Reconnect the vault, then tap Grant / retry."
-            val file = root.findFile("apptrack.toml")
-                ?: return@withContext "apptrack.toml is not in this folder. Expected it at the root of the picked Syncthing folder."
+        val failure = withContext(Dispatchers.IO) {
+            // One children query (name, id, size, type) instead of a provider round-trip per file.
+            val files = listChildren(context, tree)
+            val name = Obtainium.newest(files.keys.toList())
+                ?: return@withContext "No obtainium-export-*.json among ${files.size} files in this folder. " +
+                    "Tap Grant / retry and pick the Syncthing root (syncthing/syncthing), where Obtainium exports."
+            val (uri, size) = files.getValue(name)
             val located = SystemClock.elapsedRealtime()
-            report(VaultState.Loading, "3/5 · read", "Reading ${file.length()} bytes…")
-            val text = context.contentResolver.openInputStream(file.uri)?.bufferedReader()?.use { it.readText() }
-                ?: return@withContext "Could not read apptrack.toml. Reconnect the vault and retry."
+            report(VaultState.Loading, "3/5 · read", "Reading $name ($size bytes)…")
+            val text = context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
+                ?: return@withContext "Could not read $name. Reconnect the folder and retry."
             val read = SystemClock.elapsedRealtime()
-            report(VaultState.Loading, "4/5 · parse", "Parsing ${text.length} chars…")
-            val snap = Vault.parse(text, tree.toString(), file.length())
+            report(VaultState.Loading, "4/5 · parse", "Parsing $name…")
+            val loaded = Obtainium.parse(text, name, size)
             val parsed = SystemClock.elapsedRealtime()
-            val timings = "locate ${located - started} ms · read ${read - located} ms · parse ${parsed - read} ms"
-            report(VaultState.Loaded, "5/5 · ${snap.tracked} apps indexed", "$timings · ${snap.bytes} bytes", snap)
+            report(
+                VaultState.Loaded,
+                "5/5 · ${loaded.apps.size} apps indexed",
+                "$name · ${loaded.bytes} bytes · locate ${located - started} ms · read ${read - located} ms · parse ${parsed - read} ms",
+                loaded,
+            )
             null
         }
-        if (result != null) report(VaultState.Error, "failed", result)
+        if (failure != null) report(VaultState.Error, "failed", failure)
     } catch (e: Throwable) {
         report(VaultState.Error, "failed", e.stackTraceToString().take(2000))
     }
 }
 
-private val UsingColor = Color(0xFF6CC070)
-private val ConsideringColor = Color(0xFFE0B84A)
-private val ArchivedColor = Color(0xFFE06C6C)
-
-private fun Disposition.color() = when (this) {
-    Disposition.Using -> UsingColor
-    Disposition.Considering -> ConsideringColor
-    Disposition.Archived -> ArchivedColor
+/** Regular files directly inside the granted folder: display name → (document uri, size). */
+private fun listChildren(context: Context, tree: Uri): Map<String, Pair<Uri, Long>> {
+    val children = DocumentsContract.buildChildDocumentsUriUsingTree(tree, DocumentsContract.getTreeDocumentId(tree))
+    val projection = arrayOf(
+        DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+        DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+        DocumentsContract.Document.COLUMN_SIZE,
+        DocumentsContract.Document.COLUMN_MIME_TYPE,
+    )
+    val found = HashMap<String, Pair<Uri, Long>>()
+    context.contentResolver.query(children, projection, null, null, null)?.use { c ->
+        while (c.moveToNext()) {
+            if (c.getString(3) == DocumentsContract.Document.MIME_TYPE_DIR) continue
+            val name = c.getString(1) ?: continue
+            found[name] = DocumentsContract.buildDocumentUriUsingTree(tree, c.getString(0)) to
+                (if (c.isNull(2)) 0L else c.getLong(2))
+        }
+    } ?: throw ExportException("The folder listing returned nothing. Reconnect the folder and retry.")
+    return found
 }
 
 /** ui.rs fuzzy_score: substring position, else in-order character match scored past 1000. */
@@ -203,10 +223,9 @@ private fun fuzzyScore(query: String, text: String): Int? {
     return score
 }
 
-private sealed interface MapRow {
-    data class Category(val name: String) : MapRow
-    data class Group(val category: String, val disposition: Disposition) : MapRow
-    data class App(val app: AppRecord) : MapRow
+private sealed interface ListRow {
+    data class Category(val category: ObtainiumCategory) : ListRow
+    data class App(val app: ObtainiumApp, val under: String) : ListRow
 }
 
 private val stringListSaver = listSaver<SnapshotStateList<String>, String>(
@@ -214,37 +233,36 @@ private val stringListSaver = listSaver<SnapshotStateList<String>, String>(
     restore = { it.toMutableStateList() },
 )
 
+private val Muted = Color(0xFF8A8F98)
+
+private fun ObtainiumCategory.color(): Color = argb?.let { Color(it) } ?: Muted
+
 @Composable
 fun Home(
     state: VaultState,
     step: String,
     detail: String,
-    snapshot: VaultSnapshot?,
+    export: ObtainiumExport?,
     onRetry: () -> Unit,
-    onOpen: (AppRecord) -> Unit,
+    onOpen: (ObtainiumApp) -> Unit,
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     val expanded = rememberSaveable(saver = stringListSaver) { mutableStateListOf<String>() }
-    val archives = rememberSaveable(saver = stringListSaver) { mutableStateListOf<String>() }
 
-    val rows: List<MapRow> = when {
-        snapshot == null -> emptyList()
-        query.isNotBlank() -> snapshot.apps
+    val rows: List<ListRow> = when {
+        export == null -> emptyList()
+        query.isNotBlank() -> export.apps
             .mapNotNull { a ->
-                fuzzyScore(query, "${a.name} ${a.description} ${a.category} ${a.tags.joinToString(" ")}")
+                fuzzyScore(query, "${a.name} ${a.author} ${a.id} ${a.categories.joinToString(" ")}")
                     ?.let { it to a }
             }
             .sortedBy { it.first }
-            .map { MapRow.App(it.second) }
+            .map { ListRow.App(it.second, "search") }
         else -> buildList {
-            for (category in snapshot.categories) {
-                add(MapRow.Category(category))
-                if (category !in expanded) continue
-                for (d in Disposition.entries) {
-                    add(MapRow.Group(category, d))
-                    if (d == Disposition.Archived && category !in archives) continue
-                    snapshot.apps.filter { it.category == category && it.disposition == d }
-                        .forEach { add(MapRow.App(it)) }
+            for (category in export.categories) {
+                add(ListRow.Category(category))
+                if (category.name in expanded) {
+                    export.appsIn(category.name).forEach { add(ListRow.App(it, category.name)) }
                 }
             }
         }
@@ -259,7 +277,7 @@ fun Home(
     ) {
         item {
             Text("AppTrack-KOT", fontSize = 28.sp, modifier = Modifier.padding(top = 16.dp))
-            Text("smoke 3 · read-only viewer", style = MaterialTheme.typography.bodyMedium)
+            Text("smoke 4 · Obtainium projection", style = MaterialTheme.typography.bodyMedium)
             Text(
                 "state: ${state.label} · step $step",
                 style = MaterialTheme.typography.bodySmall,
@@ -273,13 +291,10 @@ fun Home(
                 Button(onClick = onRetry, modifier = Modifier.padding(top = 12.dp)) { Text("Grant / retry") }
             }
         }
-        if (snapshot != null) {
+        if (export != null) {
             item {
                 Text(
-                    "tracked ${snapshot.tracked} · U ${snapshot.count(null, Disposition.Using)} " +
-                        "· C ${snapshot.count(null, Disposition.Considering)} " +
-                        "· A ${snapshot.count(null, Disposition.Archived)} " +
-                        "· android inbox ${snapshot.android} · nix inbox ${snapshot.nixInbox}",
+                    "${export.apps.size} apps · ${export.installed} installed · ${export.categories.size} categories",
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(top = 8.dp),
                 )
@@ -287,7 +302,7 @@ fun Home(
                     value = query,
                     onValueChange = { query = it },
                     singleLine = true,
-                    placeholder = { Text("Search name, description, category, tags") },
+                    placeholder = { Text("Search name, author, package id, category") },
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                 )
                 if (query.isNotBlank()) {
@@ -296,26 +311,18 @@ fun Home(
             }
             items(rows, key = {
                 when (it) {
-                    is MapRow.Category -> "c:${it.name}"
-                    is MapRow.Group -> "g:${it.category}:${it.disposition.key}"
-                    is MapRow.App -> "a:${it.app.identity}"
+                    is ListRow.Category -> "c:${it.category.name}"
+                    is ListRow.App -> "a:${it.under}:${it.app.id}"
                 }
             }) { row ->
                 when (row) {
-                    is MapRow.Category -> CategoryRow(
-                        name = row.name,
-                        snapshot = snapshot,
-                        open = row.name in expanded,
-                        onToggle = { if (!expanded.remove(row.name)) expanded.add(row.name) },
+                    is ListRow.Category -> CategoryRow(
+                        category = row.category,
+                        count = export.appsIn(row.category.name).size,
+                        open = row.category.name in expanded,
+                        onToggle = { if (!expanded.remove(row.category.name)) expanded.add(row.category.name) },
                     )
-                    is MapRow.Group -> GroupRow(
-                        disposition = row.disposition,
-                        count = snapshot.count(row.category, row.disposition),
-                        foldable = row.disposition == Disposition.Archived,
-                        open = row.category in archives,
-                        onToggle = { if (!archives.remove(row.category)) archives.add(row.category) },
-                    )
-                    is MapRow.App -> AppRow(row.app, onClick = { onOpen(row.app) })
+                    is ListRow.App -> AppRow(row.app, onClick = { onOpen(row.app) })
                 }
             }
         }
@@ -323,92 +330,70 @@ fun Home(
 }
 
 @Composable
-private fun CategoryRow(name: String, snapshot: VaultSnapshot, open: Boolean, onToggle: () -> Unit) {
+private fun Dot(color: Color) {
+    Box(Modifier.size(10.dp).background(color, CircleShape))
+}
+
+@Composable
+private fun CategoryRow(category: ObtainiumCategory, count: Int, open: Boolean, onToggle: () -> Unit) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(onClick = onToggle),
     ) {
         Text(if (open) "▾ " else "▸ ", style = MaterialTheme.typography.titleMedium)
-        Text(name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-        for (d in Disposition.entries) {
-            Text(
-                "${d.mark} ${snapshot.count(name, d)}",
-                color = d.color(),
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.width(48.dp),
-            )
-        }
+        Dot(category.color())
+        Text(
+            category.name,
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.weight(1f).padding(start = 10.dp),
+        )
+        Text("$count", style = MaterialTheme.typography.bodyMedium)
     }
 }
 
 @Composable
-private fun GroupRow(disposition: Disposition, count: Int, foldable: Boolean, open: Boolean, onToggle: () -> Unit) {
-    val label = "${disposition.label} ($count)" + if (foldable) (if (open) " ▾" else " ▸") else ""
-    Text(
-        label,
-        color = disposition.color(),
-        style = MaterialTheme.typography.labelLarge,
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = if (foldable) 48.dp else 32.dp)
-            .then(if (foldable) Modifier.clickable(onClick = onToggle) else Modifier)
-            .padding(start = 20.dp, top = 8.dp),
-    )
-}
-
-@Composable
-private fun AppRow(app: AppRecord, onClick: () -> Unit) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
+private fun AppRow(app: ObtainiumApp, onClick: () -> Unit) {
+    val versions = when (val installed = app.installedVersion) {
+        null -> "not installed · latest ${app.latestVersion ?: "unknown"}"
+        else -> "installed $installed · latest ${app.latestVersion ?: "unknown"}"
+    }
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 56.dp)
             .clickable(onClick = onClick)
-            .padding(start = 20.dp, top = 4.dp, bottom = 4.dp),
+            .padding(start = 28.dp, top = 6.dp, bottom = 6.dp),
     ) {
         Text(
-            app.disposition.mark,
-            color = app.disposition.color(),
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.width(24.dp),
+            app.name + if (app.pinned) "  · pinned" else "",
+            style = MaterialTheme.typography.bodyLarge,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
-        Column(modifier = Modifier.weight(1f)) {
-            Text(app.name, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            if (app.description.isNotBlank()) {
-                Text(
-                    app.description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-        }
+        Text(
+            "${app.author} · $versions",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
 @Composable
-private fun Detail(app: AppRecord, onBack: () -> Unit) {
-    val archivedBecause = when {
-        app.archivedBecause.isNotEmpty() -> app.archivedBecause
-        app.disposition == Disposition.Archived && app.review.isNotEmpty() -> app.review
-        else -> "not recorded"
-    }
+private fun Detail(app: ObtainiumApp, export: ObtainiumExport, onBack: () -> Unit) {
     val fields = listOf(
-        "disposition" to app.disposition.label,
-        "category" to app.category,
-        "tags" to app.tags.joinToString(", ").ifEmpty { "none" },
-        "description" to app.description.ifEmpty { "none" },
-        "ledger installed" to (app.installed?.toString() ?: "unknown"),
-        "effective version" to app.version,
-        "outcome" to app.outcome,
-        "review" to app.review.ifEmpty { "not recorded" },
-        "archived because" to archivedBecause,
-        "source" to app.source,
-        "repository" to (app.repo ?: "unknown"),
-        "package" to (app.pkg ?: "unknown"),
-        "installer" to (app.installer ?: "unknown"),
-        "identity" to app.identity,
+        "package id" to app.id,
+        "author" to app.author.ifEmpty { "none" },
+        "source" to app.url.ifEmpty { "none" },
+        "categories" to app.categories.joinToString(", ").ifEmpty { ObtainiumExport.UNCATEGORIZED },
+        "installed version" to (app.installedVersion ?: "not installed"),
+        "latest version" to (app.latestVersion ?: "unknown"),
+        "release date" to Obtainium.formatMicros(app.releaseDateMicros),
+        "last update check" to Obtainium.formatMicros(app.lastUpdateCheckMicros),
+        "pinned" to app.pinned.toString(),
+        "APK assets" to app.apkNames.joinToString("\n").ifEmpty { "none" },
+        "from export" to export.file,
     )
     Column(
         modifier = Modifier
@@ -419,14 +404,28 @@ private fun Detail(app: AppRecord, onBack: () -> Unit) {
     ) {
         TextButton(onClick = onBack, modifier = Modifier.heightIn(min = 48.dp)) { Text("← Back") }
         Text(app.name, fontSize = 26.sp)
-        Text(app.disposition.label, color = app.disposition.color(), style = MaterialTheme.typography.titleMedium)
-        Divider(modifier = Modifier.padding(vertical = 12.dp))
+        HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
         for ((label, value) in fields) {
-            Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f))
+            Label(label)
             Text(value, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 8.dp))
         }
-        Divider(modifier = Modifier.padding(vertical = 12.dp))
-        Text("complete ledger record (including evidence/history)", style = MaterialTheme.typography.labelMedium)
+        if (app.settings.isNotEmpty()) {
+            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+            Label("additional settings")
+            Text(
+                app.settings.joinToString("\n") { (k, v) -> "$k = $v" },
+                fontFamily = FontFamily.Monospace,
+                fontSize = 12.sp,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+        }
+        app.changeLog?.let {
+            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+            Label("changelog")
+            Text(it, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 4.dp))
+        }
+        HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+        Label("complete export record")
         Text(
             app.raw,
             fontFamily = FontFamily.Monospace,
@@ -434,6 +433,15 @@ private fun Detail(app: AppRecord, onBack: () -> Unit) {
             modifier = Modifier.padding(top = 8.dp, bottom = 24.dp),
         )
     }
+}
+
+@Composable
+private fun Label(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+    )
 }
 
 private val VaultState.label: String get() = when (this) {
