@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.os.SystemClock
+import android.provider.DocumentsContract
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.BackHandler
@@ -14,6 +15,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -29,10 +31,15 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -43,6 +50,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -56,9 +64,9 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import android.provider.DocumentsContract
 import dev.apptrackkot.ui.AppTrackKotTheme
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
@@ -73,6 +81,16 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+/** The export being projected plus the ledger text it was loaded against. */
+data class Loaded(
+    val export: ObtainiumExport,
+    val ledgerUri: Uri,
+    val ledgerText: String,
+    val overlays: Map<String, Overlay>,
+) {
+    fun overlay(id: String) = overlays[id] ?: Overlay()
+}
+
 @Composable
 fun AppTrackKotApp() {
     val context = LocalContext.current
@@ -80,9 +98,9 @@ fun AppTrackKotApp() {
     val treeKey = "vault_tree_uri"
 
     var state by remember { mutableStateOf(VaultState.Unchecked) }
-    var step by remember { mutableStateOf("0/5 · not started") }
+    var step by remember { mutableStateOf("0/6 · not started") }
     var detail by remember { mutableStateOf("") }
-    var export by remember { mutableStateOf<ObtainiumExport?>(null) }
+    var loaded by remember { mutableStateOf<Loaded?>(null) }
     var tree by remember {
         mutableStateOf<Uri?>(prefs.getString(treeKey, null)?.let { Uri.parse(it) })
     }
@@ -92,7 +110,7 @@ fun AppTrackKotApp() {
     val chooseFolder = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { picked ->
         if (picked == null) {
             state = VaultState.Error
-            step = "1/5 · folder permission"
+            step = "1/6 · folder permission"
             detail = "Folder selection cancelled. Tap Grant / retry to pick the Syncthing folder again."
             return@rememberLauncherForActivityResult
         }
@@ -114,12 +132,12 @@ fun AppTrackKotApp() {
         val current = tree
         if (current == null) {
             state = VaultState.RequestingPermission
-            step = "1/5 · folder permission"
+            step = "1/6 · folder permission"
             detail = "Grant global file access: pick the Syncthing root folder, where Obtainium writes obtainium-export-*.json."
         } else {
-            load(context, current) { s, st, d, loaded ->
+            load(context, current) { s, st, d, result ->
                 state = s; step = st; detail = d
-                if (loaded != null) export = loaded
+                if (result != null) loaded = result
             }
         }
     }
@@ -127,17 +145,23 @@ fun AppTrackKotApp() {
     AppTrackKotTheme {
         // Surface supplies the content color; bare Text defaults to black on the dark window.
         Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
-            val current = export
-            val app = selected?.let { id -> current?.apps?.firstOrNull { it.id == id } }
+            val current = loaded
+            val app = selected?.let { id -> current?.export?.apps?.firstOrNull { it.id == id } }
             BackHandler(enabled = app != null) { selected = null }
             if (app != null && current != null) {
-                Detail(app, current, onBack = { selected = null })
+                Detail(
+                    app = app,
+                    loaded = current,
+                    onBack = { selected = null },
+                    onSaved = { loaded = it },
+                    onStale = { attempt++ },
+                )
             } else {
                 Home(
                     state = state,
                     step = step,
                     detail = detail,
-                    export = current,
+                    loaded = current,
                     onRetry = { chooseFolder.launch(null) },
                     onOpen = { selected = it.id },
                 )
@@ -146,36 +170,74 @@ fun AppTrackKotApp() {
     }
 }
 
+private data class Child(val docId: String, val uri: Uri, val size: Long, val isDir: Boolean)
+
+/** Children of one document in the granted tree, in a single provider query. */
+private fun listChildren(context: Context, tree: Uri, parentDocId: String): Map<String, Child> {
+    val children = DocumentsContract.buildChildDocumentsUriUsingTree(tree, parentDocId)
+    val projection = arrayOf(
+        DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+        DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+        DocumentsContract.Document.COLUMN_SIZE,
+        DocumentsContract.Document.COLUMN_MIME_TYPE,
+    )
+    val found = HashMap<String, Child>()
+    context.contentResolver.query(children, projection, null, null, null)?.use { c ->
+        while (c.moveToNext()) {
+            val name = c.getString(1) ?: continue
+            val docId = c.getString(0)
+            found[name] = Child(
+                docId = docId,
+                uri = DocumentsContract.buildDocumentUriUsingTree(tree, docId),
+                size = if (c.isNull(2)) 0L else c.getLong(2),
+                isDir = c.getString(3) == DocumentsContract.Document.MIME_TYPE_DIR,
+            )
+        }
+    } ?: throw ExportException("The folder listing returned nothing. Reconnect the folder and retry.")
+    return found
+}
+
+private fun readText(context: Context, uri: Uri): String =
+    context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
+        ?: throw ExportException("Could not open $uri for reading.")
+
 private suspend fun load(
     context: Context,
     tree: Uri,
-    onResult: (VaultState, String, String, ObtainiumExport?) -> Unit,
+    onResult: (VaultState, String, String, Loaded?) -> Unit,
 ) {
-    suspend fun report(s: VaultState, step: String, d: String, loaded: ObtainiumExport? = null) =
-        withContext(Dispatchers.Main) { onResult(s, step, d, loaded) }
+    suspend fun report(s: VaultState, step: String, d: String, result: Loaded? = null) =
+        withContext(Dispatchers.Main) { onResult(s, step, d, result) }
     try {
         val started = SystemClock.elapsedRealtime()
-        report(VaultState.Loading, "2/5 · open folder", "Opening Syncthing folder…")
+        report(VaultState.Loading, "2/6 · open folder", "Opening Syncthing folder…")
         val failure = withContext(Dispatchers.IO) {
-            // One children query (name, id, size, type) instead of a provider round-trip per file.
-            val files = listChildren(context, tree)
-            val name = Obtainium.newest(files.keys.toList())
-                ?: return@withContext "No obtainium-export-*.json among ${files.size} files in this folder. " +
+            val root = listChildren(context, tree, DocumentsContract.getTreeDocumentId(tree))
+            val name = Obtainium.newest(root.filterValues { !it.isDir }.keys.toList())
+                ?: return@withContext "No obtainium-export-*.json among ${root.size} entries in this folder. " +
                     "Tap Grant / retry and pick the Syncthing root (syncthing/syncthing), where Obtainium exports."
-            val (uri, size) = files.getValue(name)
+            val exportFile = root.getValue(name)
+            val ledgerDir = root["apptrack"]?.takeIf { it.isDir }
+                ?: return@withContext "No apptrack/ folder next to $name. Expected apptrack/apptrack.toml in the Syncthing root."
+            val ledgerFile = listChildren(context, tree, ledgerDir.docId)["apptrack.toml"]
+                ?: return@withContext "apptrack/ has no apptrack.toml."
             val located = SystemClock.elapsedRealtime()
-            report(VaultState.Loading, "3/5 · read", "Reading $name ($size bytes)…")
-            val text = context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
-                ?: return@withContext "Could not read $name. Reconnect the folder and retry."
+            report(VaultState.Loading, "3/6 · read", "Reading $name (${exportFile.size} bytes) and apptrack.toml…")
+            val exportText = readText(context, exportFile.uri)
+            val ledgerText = readText(context, ledgerFile.uri)
             val read = SystemClock.elapsedRealtime()
-            report(VaultState.Loading, "4/5 · parse", "Parsing $name…")
-            val loaded = Obtainium.parse(text, name, size)
-            val parsed = SystemClock.elapsedRealtime()
+            report(VaultState.Loading, "4/6 · parse export", "Parsing $name…")
+            val export = Obtainium.parse(exportText, name, exportFile.size)
+            val parsedExport = SystemClock.elapsedRealtime()
+            report(VaultState.Loading, "5/6 · parse ledger", "Parsing apptrack.toml [[inbox.android]]…")
+            val overlays = Ledger.overlays(ledgerText)
+            val parsedLedger = SystemClock.elapsedRealtime()
             report(
                 VaultState.Loaded,
-                "5/5 · ${loaded.apps.size} apps indexed",
-                "$name · ${loaded.bytes} bytes · locate ${located - started} ms · read ${read - located} ms · parse ${parsed - read} ms",
-                loaded,
+                "6/6 · ${export.apps.size} apps · ${overlays.size} notes",
+                "$name · locate ${located - started} ms · read ${read - located} ms · " +
+                    "parse export ${parsedExport - read} ms · ledger ${parsedLedger - parsedExport} ms",
+                Loaded(export, ledgerFile.uri, ledgerText, overlays),
             )
             null
         }
@@ -185,26 +247,29 @@ private suspend fun load(
     }
 }
 
-/** Regular files directly inside the granted folder: display name → (document uri, size). */
-private fun listChildren(context: Context, tree: Uri): Map<String, Pair<Uri, Long>> {
-    val children = DocumentsContract.buildChildDocumentsUriUsingTree(tree, DocumentsContract.getTreeDocumentId(tree))
-    val projection = arrayOf(
-        DocumentsContract.Document.COLUMN_DOCUMENT_ID,
-        DocumentsContract.Document.COLUMN_DISPLAY_NAME,
-        DocumentsContract.Document.COLUMN_SIZE,
-        DocumentsContract.Document.COLUMN_MIME_TYPE,
-    )
-    val found = HashMap<String, Pair<Uri, Long>>()
-    context.contentResolver.query(children, projection, null, null, null)?.use { c ->
-        while (c.moveToNext()) {
-            if (c.getString(3) == DocumentsContract.Document.MIME_TYPE_DIR) continue
-            val name = c.getString(1) ?: continue
-            found[name] = DocumentsContract.buildDocumentUriUsingTree(tree, c.getString(0)) to
-                (if (c.isNull(2)) 0L else c.getLong(2))
-        }
-    } ?: throw ExportException("The folder listing returned nothing. Reconnect the folder and retry.")
-    return found
-}
+class StaleLedgerException : Exception(
+    "apptrack.toml changed on disk since it loaded (a desktop save or a Syncthing update). " +
+        "Nothing was written. Reloading now; make the edit again.",
+)
+
+/** Re-check, edit one record, write, read back. Returns the new state or throws without writing. */
+private suspend fun save(context: Context, loaded: Loaded, app: ObtainiumApp, overlay: Overlay): Loaded =
+    withContext(Dispatchers.IO) {
+        if (readText(context, loaded.ledgerUri) != loaded.ledgerText) throw StaleLedgerException()
+        val next = Ledger.upsert(
+            text = loaded.ledgerText,
+            id = app.id,
+            name = app.name,
+            importedFrom = loaded.export.file,
+            observedOn = loaded.export.file.removePrefix("obtainium-export-").take(10),
+            overlay = overlay,
+        )
+        context.contentResolver.openOutputStream(loaded.ledgerUri, "wt")?.use { it.write(next.toByteArray()) }
+            ?: throw LedgerException("Could not open apptrack.toml for writing.")
+        val written = readText(context, loaded.ledgerUri)
+        if (written != next) throw LedgerException("apptrack.toml read back differently after writing; check it on the desktop.")
+        loaded.copy(ledgerText = written, overlays = Ledger.overlays(written))
+    }
 
 /** ui.rs fuzzy_score: substring position, else in-order character match scored past 1000. */
 private fun fuzzyScore(query: String, text: String): Int? {
@@ -224,7 +289,7 @@ private fun fuzzyScore(query: String, text: String): Int? {
 }
 
 private sealed interface ListRow {
-    data class Category(val category: ObtainiumCategory) : ListRow
+    data class Category(val category: ObtainiumCategory, val count: Int) : ListRow
     data class App(val app: ObtainiumApp, val under: String) : ListRow
 }
 
@@ -237,21 +302,35 @@ private val Muted = Color(0xFF8A8F98)
 
 private fun ObtainiumCategory.color(): Color = argb?.let { Color(it) } ?: Muted
 
+private fun Disposition?.color() = when (this) {
+    Disposition.Using -> Color(0xFF6CC070)
+    Disposition.Considering -> Color(0xFFE0B84A)
+    Disposition.Archived -> Color(0xFFE06C6C)
+    null -> Muted
+}
+
 @Composable
 fun Home(
     state: VaultState,
     step: String,
     detail: String,
-    export: ObtainiumExport?,
+    loaded: Loaded?,
     onRetry: () -> Unit,
     onOpen: (ObtainiumApp) -> Unit,
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     val expanded = rememberSaveable(saver = stringListSaver) { mutableStateListOf<String>() }
+    // Independent U / C / A toggles; none on shows everything, including unclassified apps.
+    val filters = rememberSaveable(saver = stringListSaver) { mutableStateListOf<String>() }
 
+    fun visible(app: ObtainiumApp) =
+        filters.isEmpty() || loaded?.overlay(app.id)?.disposition?.key in filters
+
+    val export = loaded?.export
     val rows: List<ListRow> = when {
         export == null -> emptyList()
         query.isNotBlank() -> export.apps
+            .filter(::visible)
             .mapNotNull { a ->
                 fuzzyScore(query, "${a.name} ${a.author} ${a.id} ${a.categories.joinToString(" ")}")
                     ?.let { it to a }
@@ -260,10 +339,10 @@ fun Home(
             .map { ListRow.App(it.second, "search") }
         else -> buildList {
             for (category in export.categories) {
-                add(ListRow.Category(category))
-                if (category.name in expanded) {
-                    export.appsIn(category.name).forEach { add(ListRow.App(it, category.name)) }
-                }
+                val apps = export.appsIn(category.name).filter(::visible)
+                if (apps.isEmpty()) continue
+                add(ListRow.Category(category, apps.size))
+                if (category.name in expanded) apps.forEach { add(ListRow.App(it, category.name)) }
             }
         }
     }
@@ -277,7 +356,7 @@ fun Home(
     ) {
         item {
             Text("AppTrack-KOT", fontSize = 28.sp, modifier = Modifier.padding(top = 16.dp))
-            Text("smoke 4 · Obtainium projection", style = MaterialTheme.typography.bodyMedium)
+            Text("smoke 5 · Obtainium projection + notes", style = MaterialTheme.typography.bodyMedium)
             Text(
                 "state: ${state.label} · step $step",
                 style = MaterialTheme.typography.bodySmall,
@@ -291,13 +370,30 @@ fun Home(
                 Button(onClick = onRetry, modifier = Modifier.padding(top = 12.dp)) { Text("Grant / retry") }
             }
         }
-        if (export != null) {
+        if (loaded != null && export != null) {
             item {
+                val unclassified = export.apps.count { loaded.overlay(it.id).disposition == null }
                 Text(
-                    "${export.apps.size} apps · ${export.installed} installed · ${export.categories.size} categories",
+                    "${export.apps.size} apps · ${export.installed} installed · $unclassified unclassified",
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(top = 8.dp),
                 )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
+                    for (d in Disposition.entries) {
+                        val on = d.key in filters
+                        FilterChip(
+                            selected = on,
+                            onClick = { if (!filters.remove(d.key)) filters.add(d.key) },
+                            label = {
+                                Text(
+                                    "${d.mark} ${export.apps.count { loaded.overlay(it.id).disposition == d }}",
+                                    color = d.color(),
+                                )
+                            },
+                            modifier = Modifier.heightIn(min = 48.dp),
+                        )
+                    }
+                }
                 OutlinedTextField(
                     value = query,
                     onValueChange = { query = it },
@@ -305,8 +401,9 @@ fun Home(
                     placeholder = { Text("Search name, author, package id, category") },
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                 )
-                if (query.isNotBlank()) {
-                    Text("${rows.size} matches", style = MaterialTheme.typography.bodySmall)
+                if (query.isNotBlank() || filters.isNotEmpty()) {
+                    val shown = if (query.isNotBlank()) rows.size else export.apps.count(::visible)
+                    Text("$shown shown", style = MaterialTheme.typography.bodySmall)
                 }
             }
             items(rows, key = {
@@ -318,7 +415,7 @@ fun Home(
                 when (row) {
                     is ListRow.Category -> CategoryRow(
                         category = row.category,
-                        count = export.appsIn(row.category.name).size,
+                        count = row.count,
                         open = row.category.name in expanded,
                         onToggle = { if (!expanded.remove(row.category.name)) expanded.add(row.category.name) },
                     )
@@ -381,7 +478,15 @@ private fun AppRow(app: ObtainiumApp, onClick: () -> Unit) {
 }
 
 @Composable
-private fun Detail(app: ObtainiumApp, export: ObtainiumExport, onBack: () -> Unit) {
+private fun Detail(
+    app: ObtainiumApp,
+    loaded: Loaded,
+    onBack: () -> Unit,
+    onSaved: (Loaded) -> Unit,
+    onStale: () -> Unit,
+) {
+    val overlay = loaded.overlay(app.id)
+    var editing by rememberSaveable { mutableStateOf(false) }
     val fields = listOf(
         "package id" to app.id,
         "author" to app.author.ifEmpty { "none" },
@@ -393,7 +498,7 @@ private fun Detail(app: ObtainiumApp, export: ObtainiumExport, onBack: () -> Uni
         "last update check" to Obtainium.formatMicros(app.lastUpdateCheckMicros),
         "pinned" to app.pinned.toString(),
         "APK assets" to app.apkNames.joinToString("\n").ifEmpty { "none" },
-        "from export" to export.file,
+        "from export" to loaded.export.file,
     )
     Column(
         modifier = Modifier
@@ -404,35 +509,171 @@ private fun Detail(app: ObtainiumApp, export: ObtainiumExport, onBack: () -> Uni
     ) {
         TextButton(onClick = onBack, modifier = Modifier.heightIn(min = 48.dp)) { Text("← Back") }
         Text(app.name, fontSize = 26.sp)
+        Text(
+            overlay.disposition?.label ?: "Unclassified",
+            color = overlay.disposition.color(),
+            style = MaterialTheme.typography.titleMedium,
+        )
+        HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+        Label("description")
+        Text(
+            overlay.description.ifEmpty { "none" },
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.padding(bottom = 8.dp),
+        )
+        if (overlay.archivedBecause.isNotEmpty()) {
+            Label("archived because")
+            Text(overlay.archivedBecause, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 8.dp))
+        }
+        OutlinedButton(onClick = { editing = true }, modifier = Modifier.heightIn(min = 48.dp)) {
+            Text("Edit description / disposition")
+        }
         HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
         for ((label, value) in fields) {
             Label(label)
             Text(value, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 8.dp))
         }
         if (app.settings.isNotEmpty()) {
-            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
-            Label("additional settings")
-            Text(
-                app.settings.joinToString("\n") { (k, v) -> "$k = $v" },
-                fontFamily = FontFamily.Monospace,
-                fontSize = 12.sp,
-                modifier = Modifier.padding(top = 4.dp),
-            )
+            Collapsible("additional settings (${app.settings.size})") {
+                Text(
+                    app.settings.joinToString("\n") { (k, v) -> "$k = $v" },
+                    fontFamily = FontFamily.Monospace,
+                    fontSize = 12.sp,
+                )
+            }
         }
         app.changeLog?.let {
-            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
-            Label("changelog")
-            Text(it, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 4.dp))
+            Collapsible("changelog") { Text(it, style = MaterialTheme.typography.bodySmall) }
         }
-        HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
-        Label("complete export record")
-        Text(
-            app.raw,
-            fontFamily = FontFamily.Monospace,
-            fontSize = 12.sp,
-            modifier = Modifier.padding(top = 8.dp, bottom = 24.dp),
+        Collapsible("complete export record") {
+            Text(app.raw, fontFamily = FontFamily.Monospace, fontSize = 12.sp)
+        }
+        Box(Modifier.heightIn(min = 24.dp))
+    }
+    if (editing) {
+        EditDialog(
+            app = app,
+            loaded = loaded,
+            onDismiss = { editing = false },
+            onSaved = { editing = false; onSaved(it) },
+            onStale = onStale,
         )
     }
+}
+
+@Composable
+private fun Collapsible(title: String, content: @Composable () -> Unit) {
+    var open by rememberSaveable(title) { mutableStateOf(false) }
+    HorizontalDivider(modifier = Modifier.padding(top = 4.dp))
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable { open = !open },
+    ) {
+        Text(if (open) "▾ " else "▸ ", style = MaterialTheme.typography.titleMedium)
+        Text(title, style = MaterialTheme.typography.labelLarge)
+    }
+    if (open) Box(Modifier.padding(bottom = 12.dp)) { content() }
+}
+
+@Composable
+private fun EditDialog(
+    app: ObtainiumApp,
+    loaded: Loaded,
+    onDismiss: () -> Unit,
+    onSaved: (Loaded) -> Unit,
+    onStale: () -> Unit,
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val current = loaded.overlay(app.id)
+    var description by rememberSaveable { mutableStateOf(current.description) }
+    var dispositionKey by rememberSaveable { mutableStateOf(current.disposition?.key) }
+    var reason by rememberSaveable { mutableStateOf(current.archivedBecause) }
+    var menu by remember { mutableStateOf(false) }
+    var saving by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    val disposition = Disposition.entries.firstOrNull { it.key == dispositionKey }
+    val needsReason = disposition == Disposition.Archived && reason.isBlank()
+
+    AlertDialog(
+        onDismissRequest = { if (!saving) onDismiss() },
+        title = { Text(app.name) },
+        text = {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Description") },
+                    minLines = 3,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Box(modifier = Modifier.padding(top = 12.dp)) {
+                    OutlinedButton(onClick = { menu = true }, modifier = Modifier.heightIn(min = 48.dp)) {
+                        Text(disposition?.label ?: "Unclassified", color = disposition.color())
+                        Text("  ▾")
+                    }
+                    DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                        for (d in Disposition.entries) {
+                            DropdownMenuItem(
+                                text = { Text(d.label, color = d.color()) },
+                                onClick = { dispositionKey = d.key; menu = false },
+                                modifier = Modifier.heightIn(min = 48.dp),
+                            )
+                        }
+                    }
+                }
+                if (disposition == Disposition.Archived) {
+                    OutlinedTextField(
+                        value = reason,
+                        onValueChange = { reason = it },
+                        label = { Text("Archived because (required)") },
+                        isError = needsReason,
+                        modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                    )
+                }
+                if (saving) LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(top = 12.dp))
+                error?.let {
+                    Text(
+                        it,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 12.dp),
+                    )
+                }
+                Text(
+                    "Saves to apptrack.toml as [[inbox.android]] android:${app.id}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Muted,
+                    modifier = Modifier.padding(top = 12.dp),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                enabled = !saving && !needsReason,
+                onClick = {
+                    saving = true
+                    error = null
+                    scope.launch {
+                        try {
+                            onSaved(save(context, loaded, app, Overlay(disposition, description.trim(), reason.trim())))
+                        } catch (e: StaleLedgerException) {
+                            // Keep the edits; the reload swaps in fresh ledger text, then Save again.
+                            error = e.message
+                            saving = false
+                            onStale()
+                        } catch (e: Throwable) {
+                            error = e.stackTraceToString().take(1500)
+                            saving = false
+                        }
+                    }
+                },
+            ) { Text("Save") }
+        },
+        dismissButton = {
+            TextButton(enabled = !saving, onClick = onDismiss) { Text("Cancel") }
+        },
+    )
 }
 
 @Composable
