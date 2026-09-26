@@ -81,6 +81,10 @@ fn installer(name: &str) -> Option<&'static str> {
     } else if name.ends_with(".exe")
         || name.ends_with(".deb")
         || name.ends_with(".rpm")
+        || name.ends_with(".whl")
+        || name.ends_with(".apk")
+        || name.ends_with(".msi")
+        || name.ends_with(".pkg")
         || name.ends_with(".dmg")
         || name.ends_with(".txt")
         || name.ends_with(".json")
@@ -98,12 +102,18 @@ fn installer(name: &str) -> Option<&'static str> {
 
 fn matches_machine(name: &str) -> bool {
     let name = name.to_ascii_lowercase();
+    if ["windows", "darwin", "macos", "apple"].iter().any(|platform| name.contains(platform)) {
+        return false;
+    }
     let arch = if std::env::consts::ARCH == "x86_64" {
-        ["x86_64", "amd64"]
+        ["x86_64", "amd64", "x64", "linux64"]
     } else {
-        ["aarch64", "arm64"]
+        ["aarch64", "arm64", "linux-aarch64", "linux-arm64"]
     };
-    name.contains("linux") && arch.iter().any(|a| name.contains(a))
+    arch.iter().any(|a| name.contains(a))
+        && (name.contains("linux")
+            || name.ends_with(".appimage")
+            || (name.contains("amd64") && (name.ends_with(".tar.gz") || name.ends_with(".tar.xz"))))
 }
 
 fn asset_pattern(name: &str, tag: &str) -> String {
@@ -161,6 +171,21 @@ fn draft(repo: &str, name: &str, category: &str, description: &str) -> App {
 
 pub fn interactive(ledger: &mut Ledger, seed: Option<&str>, category: &str) -> Result<String> {
     interactive_with(ledger, seed, category, None, &crate::dialog::Console)
+}
+
+pub(crate) fn configure_source(ledger: &mut Ledger, index: usize, dialog: &dyn crate::dialog::Dialog) -> Result<String> {
+    let app = ledger.apps.get(index).context("Application no longer exists")?;
+    ensure!(app.recipe.is_none(), "{} already has an install recipe", app.name);
+    let source = app.identity.clone();
+    ensure!(source.starts_with("https://github.com/"), "Source review currently needs a GitHub repository identity");
+    let Some(method) = dialog.choose("Check install method", &[
+        "GitHub release binary / archive".into(), "Cargo registry package".into(), "Keep record only".into(),
+    ], None)? else { return Ok("Source review cancelled; record retained.".into()); };
+    match method {
+        0 => interactive_with(ledger, Some(&source), "", None, dialog),
+        1 => crate::cargo_intake::configure(ledger, index, dialog),
+        _ => Ok("Record saved without an install recipe.".into()),
+    }
 }
 
 macro_rules! say { ($dialog:expr, $($args:tt)*) => { $dialog.message(format!($($args)*)) }; }
@@ -612,6 +637,13 @@ mod tests {
         assert_eq!(installer("toast-linux-amd64.zip"), Some("zip"));
         assert_eq!(installer("tty7-26.9.2-linux-x86_64.AppImage"), Some("appimage"));
         assert_eq!(installer("checksums.sha256"), None);
+        if std::env::consts::ARCH == "x86_64" {
+            assert!(matches_machine("microneo-1.1.27-linux64.tar.gz"));
+            assert!(matches_machine("ferrite-linux-x64.tar.gz"));
+            assert!(matches_machine("leaftop_1.0_amd64.tar.gz"));
+            assert!(!matches_machine("termide-x86_64-apple-darwin.tar.gz"));
+            assert!(!matches_machine("tool-windows-x64.zip"));
+        }
         Ok(())
     }
 

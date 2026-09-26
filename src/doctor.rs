@@ -35,7 +35,7 @@ pub fn observations(app: &App) -> Vec<String> {
                 Ok(meta) if meta.permissions().mode() & 0o111 == 0 => {
                     format!("! not executable: {raw}")
                 }
-                Ok(_) => format!("present: {raw}"),
+                Ok(_) => raw.clone(),
                 Err(e) if e.kind() == std::io::ErrorKind::NotFound => format!("! missing: {raw}"),
                 Err(e) => format!("! unreadable: {raw} ({e})"),
             }
@@ -95,7 +95,80 @@ pub fn presence_marker(app: &App) -> &'static str {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum InstallVerdict {
+    Ready,
+    Review,
+    Unavailable,
+}
+
+impl InstallVerdict {
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Ready | Self::Review => "Installs",
+            Self::Unavailable => "Not Installable by Apptrack",
+        }
+    }
+}
+
+pub struct InstallAssessment {
+    pub verdict: InstallVerdict,
+    pub reason: &'static str,
+}
+
+pub fn install_assessment(app: &App) -> InstallAssessment {
+    use InstallVerdict::{Ready, Review, Unavailable};
+    let Some(recipe) = &app.recipe else {
+        return InstallAssessment { verdict: Unavailable, reason: "No reviewed AppTrack install recipe." };
+    };
+    if app.disposition == crate::ledger::Disposition::Archived {
+        return InstallAssessment { verdict: Unavailable, reason: "Move this archived record to Considering before installing." };
+    }
+    if matches!(recipe.installer.as_str(), "appimage" | "appimage-appdir") {
+        return InstallAssessment { verdict: Review, reason: "AppImage needs a NixOS launch and bundled-library check." };
+    }
+    if recipe.source == "flatpak" {
+        return InstallAssessment { verdict: Ready, reason: "Reviewed Flatpak install recipe." };
+    }
+    if app.launch.as_ref().map(|launch| launch.gui)
+        .unwrap_or_else(|| app.tags.iter().any(|tag| tag == "gui"))
+    {
+        return InstallAssessment { verdict: Review, reason: "GUI binary needs a NixOS runtime-library and launch check." };
+    }
+    if matches!(recipe.source.as_str(), "cargo" | "bun") {
+        return InstallAssessment { verdict: Ready, reason: "Reviewed local package install recipe." };
+    }
+    if recipe.asset.contains("musl") {
+        return InstallAssessment { verdict: Ready, reason: "Reviewed musl x86_64 executable recipe." };
+    }
+    if recipe.asset.contains("gnu") {
+        return InstallAssessment { verdict: Review, reason: "GNU-linked release may need nix-ld; launch is untested." };
+    }
+    if recipe.source == "github"
+        && recipe.installer == "binary-copy"
+        && app.tags.iter().any(|tag| matches!(tag.as_str(), "tui" | "cli"))
+    {
+        return InstallAssessment { verdict: Ready, reason: "Reviewed direct CLI/TUI executable recipe." };
+    }
+    InstallAssessment { verdict: Review, reason: "Native release needs a dependency and NixOS launch check." }
+}
+
+fn disk_label(app: &App) -> &'static str {
+    match health(app) {
+        "paths present" => "Present",
+        "! present, marked absent" => "Present (ledger says absent)",
+        "! check paths" => "Check paths",
+        "not installed" => "Not present",
+        "unverified" if exists_on_disk(app) || crate::nix_strategy::realization_state(app) == Some(true) => "Present",
+        _ => "Unknown",
+    }
+}
+
 pub fn report(app: &App, raw_record: &str) -> String {
+    report_with_sections(app, raw_record, true, true)
+}
+
+pub fn report_with_sections(app: &App, raw_record: &str, source_open: bool, record_open: bool) -> String {
     let observations = observations(app);
     let removed_by_apptrack = app.installed == Some(false)
         && app.provenance.removed_at_unix.is_some();
@@ -141,22 +214,96 @@ pub fn report(app: &App, raw_record: &str) -> String {
         (Err(error), _) if app.provenance.source == "nix" || app.tags.iter().any(|tag| tag == "multi-install") => format!("\nNix declaration: unverified ({error})"),
         _ => String::new(),
     };
+    let removal_authority = if removed_by_apptrack {
+        "none (AppTrack-managed installation was removed)"
+    } else if nix_config_removed {
+        "none (exact Nix declaration was removed; realization remains human-controlled)"
+    } else if matches!(nix_declared, Ok(Some(true))) {
+        "exact Home Manager declaration is separately editable after confirmation"
+    } else if app.provenance.managed_by_apptrack {
+        "claimed in ledger; installer receipt must be verified before removal"
+    } else {
+        "none (imported/unmanaged)"
+    };
+    let suggested_action = if removed_by_apptrack {
+        "none; archived managed installation was removed successfully"
+    } else if nix_config_removed && nix_realized == Some(true) {
+        "run your normal rebuild when ready; AppTrack will only observe whether realization converges"
+    } else if nix_config_removed {
+        "none; Nix declaration and recorded realization are absent"
+    } else if app.tags.iter().any(|tag| tag == "multi-install") {
+        "none; recovery-floor and current-overlay installations are expected"
+    } else if health(app).starts_with('!') {
+        "inspect the recorded paths and provenance; reinstall through the recorded source if needed"
+    } else {
+        "review unknown evidence; no automatic changes"
+    };
+    let source = if source_open {
+        let recipe = app.recipe.as_ref().map(|recipe| match recipe.source.as_str() {
+            "cargo" | "bun" => format!(
+                "{} / {}\n  Package: {}\n  Binaries: {}\n  Root: {}",
+                recipe.source,
+                recipe.installer,
+                recipe.package.as_deref().unwrap_or("unknown"),
+                if recipe.bins.is_empty() { "unknown".into() } else { recipe.bins.join(", ") },
+                recipe.root.as_deref().unwrap_or("default"),
+            ),
+            "flatpak" => format!(
+                "flatpak / {}\n  Package: {}\n  Remote: {}",
+                recipe.installer,
+                recipe.package.as_deref().unwrap_or("unknown"),
+                recipe.remote.as_deref().unwrap_or("default"),
+            ),
+            _ => format!(
+                "{} / {}\n  Asset: {}\n  Destination: {}",
+                recipe.source, recipe.installer, recipe.asset, recipe.destination,
+            ),
+        }).unwrap_or_else(|| "none".into());
+        format!(
+            "Source [open] (s collapse)\n  Recorded: {}\n  Repository: {}\n  Package: {}\n  Installer: {}\n  Config: {}{}{}\n  Recipe: {}\n  AppTrack removal authority: {}\n  Suggested action: {}",
+            app.provenance.source,
+            app.provenance.repo.as_deref().unwrap_or("unknown"),
+            app.provenance.package.as_deref().unwrap_or("unknown"),
+            app.provenance.installer.as_deref().unwrap_or("unknown"),
+            app.provenance.config_file.as_deref().unwrap_or("not recorded"),
+            app.provenance.config_line.map(|n| format!(":{n}")).unwrap_or_default(),
+            nix_state,
+            recipe,
+            removal_authority,
+            suggested_action,
+        )
+    } else {
+        "Source [closed] (s expand)".into()
+    };
+    let ledger_record = if record_open {
+        format!("Complete Ledger Record [open] (l collapse)\n{raw_record}")
+    } else {
+        "Complete Ledger Record [closed] (l expand)".into()
+    };
+    let observed_paths = if observations.is_empty() && removed_by_apptrack {
+        "no installed paths recorded; AppTrack removal receipt says absent".into()
+    } else if observations.is_empty() && app.installed == Some(false) {
+        "no installed paths recorded; ledger says not installed".into()
+    } else if observations.is_empty() {
+        "no installed paths recorded; installation not verified".into()
+    } else {
+        observations.join("\n")
+    };
+    let assessment = install_assessment(app);
     format!(
-        "app: {}\nstatus: {}\ndisposition: {}\nledger installed: {}\neffective version: {}{}\noutcome: {}\nreview: {}\narchived because: {}\n\nfilesystem observations (existence and mode only):\n{}\n\nsource: {}\nrepository: {}\npackage: {}\ninstaller: {}\nconfig: {}{}{}\nAppTrack removal authority: {}\n\nsuggested action: {}\n\ncomplete ledger record (including evidence/history):\n{}",
+        "App: {}\nOn Disk: {}\nStatus: {}\nledger installed: {}\neffective version: {}{}\noutcome: {}\nreview: {}\narchived because: {}\n\nPresent:\n{}\n\nInstall: {}\n{}\n\n{}\n\n{}",
         app.name,
-        health(app),
-        app.disposition.label(),
-        app.installed
-            .map(|v| v.to_string())
-            .unwrap_or_else(|| "unknown".into()),
+        disk_label(app),
+        match app.disposition {
+            crate::ledger::Disposition::Using => "Using",
+            crate::ledger::Disposition::Considering => "Considering",
+            crate::ledger::Disposition::Archived => "Archived",
+        },
+        app.installed.map(|v| v.to_string()).unwrap_or_else(|| "unknown".into()),
         effective_version(app),
         multi_install,
         app.outcome,
-        if app.review.is_empty() {
-            "not recorded"
-        } else {
-            &app.review
-        },
+        if app.review.is_empty() { "not recorded" } else { &app.review },
         if !app.archived_because.is_empty() {
             &app.archived_because
         } else if app.disposition == crate::ledger::Disposition::Archived && !app.review.is_empty() {
@@ -164,53 +311,11 @@ pub fn report(app: &App, raw_record: &str) -> String {
         } else {
             "not recorded"
         },
-        if observations.is_empty() && removed_by_apptrack {
-            "no installed paths recorded; AppTrack removal receipt says absent".into()
-        } else if observations.is_empty() && app.installed == Some(false) {
-            "no installed paths recorded; ledger says not installed".into()
-        } else if observations.is_empty() {
-            "no installed paths recorded; installation not verified".into()
-        } else {
-            observations.join("\n")
-        },
-        app.provenance.source,
-        app.provenance.repo.as_deref().unwrap_or("unknown"),
-        app.provenance.package.as_deref().unwrap_or("unknown"),
-        app.provenance.installer.as_deref().unwrap_or("unknown"),
-        app.provenance
-            .config_file
-            .as_deref()
-            .unwrap_or("not recorded"),
-        app.provenance
-            .config_line
-            .map(|n| format!(":{n}"))
-            .unwrap_or_default(),
-        nix_state,
-        if removed_by_apptrack {
-            "none (AppTrack-managed installation was removed)"
-        } else if nix_config_removed {
-            "none (exact Nix declaration was removed; realization remains human-controlled)"
-        } else if matches!(nix_declared, Ok(Some(true))) {
-            "exact Home Manager declaration is separately editable after confirmation"
-        } else if app.provenance.managed_by_apptrack {
-            "claimed in ledger; installer receipt must be verified before removal"
-        } else {
-            "none (imported/unmanaged)"
-        },
-        if removed_by_apptrack {
-            "none; archived managed installation was removed successfully"
-        } else if nix_config_removed && nix_realized == Some(true) {
-            "run your normal rebuild when ready; AppTrack will only observe whether realization converges"
-        } else if nix_config_removed {
-            "none; Nix declaration and recorded realization are absent"
-        } else if app.tags.iter().any(|tag| tag == "multi-install") {
-            "none; recovery-floor and current-overlay installations are expected"
-        } else if health(app).starts_with('!') {
-            "inspect the recorded paths and provenance; reinstall through the recorded source if needed"
-        } else {
-            "review unknown evidence; no automatic changes"
-        },
-        raw_record
+        observed_paths,
+        assessment.verdict.label(),
+        assessment.reason,
+        source,
+        ledger_record,
     )
 }
 
@@ -218,6 +323,50 @@ pub fn report(app: &App, raw_record: &str) -> String {
 mod tests {
     use super::*;
     use crate::ledger::Ledger;
+
+    #[test]
+    fn install_verdict_separates_clear_recipes_runtime_review_and_missing_recipes() -> anyhow::Result<()> {
+        let mut app: App = toml::from_str(
+            "identity = 'name:tool'\nname = 'tool'\ncategory = 'Tools'\ndisposition = 'considering'\n",
+        )?;
+        app.tags = vec!["tui".into()];
+        assert_eq!(install_assessment(&app).verdict, InstallVerdict::Unavailable);
+        app.recipe = Some(crate::update::Recipe {
+            source: "github".into(), installer: "binary-copy".into(), asset: "tool-linux-amd64".into(),
+            ..Default::default()
+        });
+        assert_eq!(install_assessment(&app).verdict, InstallVerdict::Ready);
+        app.recipe.as_mut().unwrap().installer = "appimage".into();
+        assert_eq!(install_assessment(&app).verdict, InstallVerdict::Review);
+        app.recipe.as_mut().unwrap().installer = "tar.gz".into();
+        app.recipe.as_mut().unwrap().asset = "tool-x86_64-unknown-linux-gnu.tar.gz".into();
+        assert_eq!(install_assessment(&app).verdict, InstallVerdict::Review);
+        app.recipe.as_mut().unwrap().asset = "tool-x86_64-unknown-linux-musl.tar.gz".into();
+        assert_eq!(install_assessment(&app).verdict, InstallVerdict::Ready);
+        app.tags = vec!["gui".into()];
+        app.recipe.as_mut().unwrap().source = "cargo".into();
+        app.recipe.as_mut().unwrap().installer = "cargo-install".into();
+        app.launch = Some(crate::ledger::Launch { program: "tool".into(), args: vec![], gui: false });
+        assert_eq!(install_assessment(&app).verdict, InstallVerdict::Ready);
+        Ok(())
+    }
+
+    #[test]
+    fn detail_report_uses_short_labels_and_closed_source_and_record() -> anyhow::Result<()> {
+        let app: App = toml::from_str(
+            "identity = 'name:tool'\nname = 'tool'\ncategory = 'Tools'\ndisposition = 'considering'\n",
+        )?;
+        let raw = "hidden ledger evidence";
+        let closed = report_with_sections(&app, raw, false, false);
+        assert!(closed.contains("On Disk: Unknown\nStatus: Considering"));
+        assert!(closed.contains("\nPresent:\n"));
+        assert!(closed.contains("Install: Not Installable by Apptrack"));
+        assert!(closed.contains("Source [closed]"));
+        assert!(closed.contains("Complete Ledger Record [closed]"));
+        assert!(!closed.contains(raw));
+        assert!(report_with_sections(&app, raw, true, true).contains(raw));
+        Ok(())
+    }
 
     #[test]
     fn disk_presence_requires_observed_paths_or_a_managed_flatpak_receipt() -> anyhow::Result<()> {

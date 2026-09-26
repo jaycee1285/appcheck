@@ -141,8 +141,8 @@ fn validate_recipe(recipe: &Recipe) -> Result<()> {
     ensure!(
         ((recipe.source == "github" || recipe.source == "codeberg")
             && supported_installer(&recipe.installer))
-            || (recipe.source == "gitlab" && matches!(recipe.installer.as_str(), "appimage" | "appimage-appdir")),
-        "Supported forge installers: GitHub/Codeberg binary-copy/tar.gz/tar.xz/zip/appimage/appimage-appdir; GitLab appimage/appimage-appdir"
+            || (recipe.source == "gitlab" && matches!(recipe.installer.as_str(), "binary-copy" | "appimage" | "appimage-appdir")),
+        "Supported forge installers: GitHub/Codeberg binary-copy/tar.gz/tar.xz/zip/appimage/appimage-appdir; GitLab binary-copy/appimage/appimage-appdir"
     );
     let parts: Vec<_> = recipe.repo.split('/').collect();
     ensure!(

@@ -580,6 +580,15 @@ fn apply_with(
 fn receipt_document(ledger: &Ledger, plan: &Plan, hashes: &BTreeMap<String, String>) -> Result<toml_edit::DocumentMut> {
     let mut doc = ledger.document();
     let app = doc["apps"].as_array_of_tables_mut().unwrap().get_mut(plan.index).unwrap();
+    let previous = &ledger.apps[plan.index];
+    if let Some(launch) = &previous.launch {
+        if previous.installed_paths.iter().any(|path| expand_path(path) == expand_path(&launch.program))
+            && plan.targets.len() == 1
+            && expand_path(&launch.program) != plan.targets[0]
+        {
+            app["launch"]["program"] = value(plan.targets[0].to_string_lossy().as_ref());
+        }
+    }
     if let Some(old) = app.get("provenance").and_then(Item::as_table) {
         let mut old = old.clone();
         old["ended_at_unix"] = value(timestamp());
@@ -784,6 +793,24 @@ bins = ["tool"]
         );
         assert!(reopened.record(0).contains("registry = \"crates-io\""));
         assert!(reopened.record(0).contains("[[apps.provenance_history]]"));
+        Ok(())
+    }
+
+    #[test]
+    fn imported_launch_moves_to_cargo_bin_only_after_receipt() -> Result<()> {
+        let (dir, ledger, _) = fixture()?;
+        let old = dir.path().join("local/tool");
+        let path = ledger.path.clone();
+        let text = fs::read_to_string(&path)?
+            .replace("version = \"1.0.0\"", &format!("version = \"1.0.0\"\ninstalled_paths = [{old:?}]"));
+        fs::write(&path, format!("{text}\n[apps.launch]\nprogram = {old:?}\nargs = []\ngui = false\n"))?;
+        let ledger = Ledger::open(&path)?;
+        let plan = make_plan(&ledger.apps[0], 0, "2.0.0".into(), None)?;
+        let mut hashes = BTreeMap::new();
+        hashes.insert("tool".to_string(), "verified hash".to_string());
+        let receipt = receipt_document(&ledger, &plan, &hashes)?;
+        assert_eq!(receipt["apps"][0]["launch"]["program"].as_str(), Some(plan.targets[0].to_str().unwrap()));
+        assert_eq!(ledger.apps[0].launch.as_ref().unwrap().program, old.to_string_lossy());
         Ok(())
     }
 

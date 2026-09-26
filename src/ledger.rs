@@ -369,6 +369,53 @@ impl Ledger {
         self.save(doc)
     }
 
+    pub fn edit_record(
+        &mut self,
+        index: usize,
+        name: &str,
+        category: &str,
+        upstream: &str,
+        description: &str,
+        tags: &str,
+    ) -> Result<()> {
+        ensure!(index < self.apps.len(), "Application no longer exists");
+        ensure!(!name.trim().is_empty() && !category.trim().is_empty(), "Name and category are required");
+        let old = &self.apps[index];
+        let identity = if upstream.trim().is_empty() {
+            format!("name:{}", name.trim().to_lowercase().split_whitespace().collect::<Vec<_>>().join("-"))
+        } else {
+            normalize_identity(upstream)
+        };
+        ensure!(
+            !self.apps.iter().enumerate().any(|(i, app)| i != index && normalize_identity(&app.identity) == identity),
+            "Already tracked: {identity}"
+        );
+        let source_changed = identity != normalize_identity(&old.identity);
+        ensure!(
+            !source_changed || (old.recipe.is_none()
+                && !old.provenance.managed_by_apptrack
+                && matches!(old.provenance.source.as_str(), "unknown" | "manual")
+                && old.nix_migration.is_none()),
+            "This source has reviewed install authority; its identity cannot be changed in the edit form"
+        );
+        let mut doc = self.document();
+        let app = doc["apps"].as_array_of_tables_mut().unwrap().get_mut(index).unwrap();
+        set_text(app, "identity", &identity);
+        set_text(app, "name", name.trim());
+        set_text(app, "category", category.trim());
+        set_text(app, "description", description.trim());
+        let mut array = toml_edit::Array::new();
+        for tag in tags.split(',').map(str::trim).filter(|s| !s.is_empty()) { array.push(tag); }
+        app["tags"] = value(array);
+        if source_changed {
+            if let Some(provenance) = app.get_mut("provenance").and_then(Item::as_table_mut) {
+                if identity.starts_with("https://") { set_text(provenance, "repo", &identity); }
+                else { provenance.remove("repo"); }
+            }
+        }
+        self.save(doc)
+    }
+
     fn add_document(
         &self,
         name: &str,
@@ -406,7 +453,7 @@ impl Ledger {
         table
             .decor_mut()
             .set_prefix("\n\n# Added explicitly — installation/provenance not yet verified.\n");
-        table["identity"] = value(identity);
+        table["identity"] = value(&identity);
         table["name"] = value(name.trim());
         table["category"] = value(category.trim());
         table["description"] = value(description.trim());
@@ -417,6 +464,13 @@ impl Ledger {
             array.push(tag);
         }
         table["tags"] = value(array);
+        if identity.starts_with("https://") {
+            let mut provenance = Table::new();
+            provenance["source"] = value("unknown");
+            provenance["repo"] = value(identity.clone());
+            provenance["managed_by_apptrack"] = value(false);
+            table["provenance"] = Item::Table(provenance);
+        }
         if doc.get("apps").is_none()
             || doc
                 .get("apps")
@@ -585,6 +639,28 @@ mod tests {
     const FIXTURE: &str = "schema_version = 1\n\n[[inbox.nix]]\nnote = 'an incomplete Nix thought'\n\n[[inbox.appimage]]\nname = 'rough AppImage note'\n\n# Keep this human note\n[[apps]]\nidentity = 'name:foo'\nname = 'foo'\ncategory = 'Editing'\ndisposition = 'considering' # Keep inline note too\nfuture_field = 'retain me'\n";
 
     #[test]
+    fn editing_imported_source_preserves_evidence_and_refuses_managed_identity_change() -> Result<()> {
+        let dir = tempfile::tempdir()?;
+        let path = dir.path().join("ledger.toml");
+        fs::write(&path, format!("{FIXTURE}\n[apps.provenance]\nsource = 'unknown'\nmanaged_by_apptrack = false\n\n[apps.evidence]\nimported_from = 'notes.md'\n"))?;
+        let mut ledger = Ledger::open(&path)?;
+        ledger.edit_record(0, "foo", "Editing", "https://github.com/owner/foo", "New description", "tui")?;
+        let saved = fs::read_to_string(&path)?;
+        assert!(saved.contains("imported_from = 'notes.md'"));
+        assert!(saved.contains("future_field = 'retain me'"));
+        assert!(saved.contains("description = \"New description\""));
+        assert_eq!(ledger.apps[0].provenance.source, "unknown");
+        assert_eq!(ledger.apps[0].provenance.repo.as_deref(), Some("https://github.com/owner/foo"));
+        let unchanged = saved.clone();
+        let mut doc = ledger.document();
+        doc["apps"].as_array_of_tables_mut().unwrap().get_mut(0).unwrap()["provenance"]["managed_by_apptrack"] = value(true);
+        ledger.save(doc)?;
+        assert!(ledger.edit_record(0, "foo", "Editing", "https://github.com/other/foo", "New description", "tui").is_err());
+        assert_ne!(fs::read_to_string(&path)?, unchanged);
+        Ok(())
+    }
+
+    #[test]
     fn decisions_preserve_unknown_fields_comments_and_external_edits() -> Result<()> {
         let dir = tempfile::tempdir()?;
         let path = dir.path().join("apps.toml");
@@ -643,6 +719,7 @@ mod tests {
         );
         assert_eq!(ledger.apps[1].installed, None);
         assert_eq!(ledger.apps[1].provenance.source, "unknown");
+        assert_eq!(ledger.apps[1].provenance.repo.as_deref(), Some("https://github.com/owner/editor"));
         assert!(!ledger.apps[1].provenance.managed_by_apptrack);
         assert!(
             ledger

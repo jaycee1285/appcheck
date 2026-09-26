@@ -32,7 +32,8 @@ fn tar_binaries(reader: impl Read, arch: &str) -> Result<Vec<String>> {
         {
             continue;
         }
-        let name = String::from_utf8(entry.path_bytes().into_owned())?;
+        let raw_name = String::from_utf8(entry.path_bytes().into_owned())?;
+        let name = raw_name.strip_prefix("./").unwrap_or(&raw_name).to_string();
         if validate_member(&name).is_ok() && is_elf(&mut entry, arch)? {
             ensure!(
                 !names.contains(&name),
@@ -114,7 +115,9 @@ fn extract_tar(reader: impl Read, member: &str, target: &Path) -> Result<()> {
     let mut found = false;
     for entry in archive.entries()? {
         let entry = entry?;
-        if entry.path_bytes().as_ref() != member.as_bytes() {
+        let raw = entry.path_bytes();
+        let canonical = raw.strip_prefix(b"./").unwrap_or(&raw);
+        if canonical != member.as_bytes() {
             continue;
         }
         ensure!(!found, "Archive contains duplicate member {member}");
@@ -244,6 +247,32 @@ pub(crate) mod tests {
         }
         assert!(!dir.path().join("bin").exists());
         assert!(!dir.path().join("README").exists());
+        Ok(())
+    }
+
+    #[test]
+    fn leading_dot_tar_member_is_canonical_but_duplicate_aliases_fail() -> Result<()> {
+        let dir = tempfile::tempdir()?;
+        let mut binary = vec![42; 128];
+        binary[..6].copy_from_slice(b"\x7fELF\x02\x01");
+        binary[16..18].copy_from_slice(&2u16.to_le_bytes());
+        binary[18..20].copy_from_slice(&62u16.to_le_bytes());
+        let write_archive = |name: &str, entries: &[(&str, tar::EntryType, &[u8])]| -> Result<_> {
+            let tar = tar_bytes(entries)?;
+            let mut gz = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::default());
+            gz.write_all(&tar)?;
+            let path = dir.path().join(name);
+            fs::write(&path, gz.finish()?)?;
+            Ok(path)
+        };
+        let one = write_archive("one.tar.gz", &[("./tool", tar::EntryType::Regular, &binary)])?;
+        assert_eq!(binaries(&one, "tar.gz", "x86_64")?, ["tool"]);
+        let target = dir.path().join("tool");
+        extract(&one, "tar.gz", "tool", &target)?;
+        assert_eq!(fs::read(target)?, binary);
+        let duplicate = write_archive("duplicate.tar.gz", &[("./tool", tar::EntryType::Regular, &binary), ("tool", tar::EntryType::Regular, &binary)])?;
+        assert!(binaries(&duplicate, "tar.gz", "x86_64").is_err());
+        assert!(extract(&duplicate, "tar.gz", "tool", &dir.path().join("duplicate-tool")).is_err());
         Ok(())
     }
 

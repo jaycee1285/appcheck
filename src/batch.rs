@@ -107,7 +107,7 @@ pub(crate) fn check_one(
         ("github", installer) if update::supported_installer(installer) => {
             Ok(Plan::Github(update::check_cancellable(ledger, index, cancel)?))
         }
-        ("gitlab", "appimage" | "appimage-appdir") => Ok(Plan::Gitlab(gitlab_strategy::check(
+        ("gitlab", "binary-copy" | "appimage" | "appimage-appdir") => Ok(Plan::Gitlab(gitlab_strategy::check(
             ledger, index, cancel,
         )?)),
         ("codeberg", installer) if update::supported_installer(installer) => Ok(
@@ -212,7 +212,7 @@ pub(crate) fn collect_with_cancel(
         let supported = (recipe.source == "github" && update::supported_installer(&recipe.installer))
             || (recipe.source == "codeberg" && update::supported_installer(&recipe.installer))
             || (recipe.source == "gitlab"
-                && matches!(recipe.installer.as_str(), "appimage" | "appimage-appdir"))
+                && matches!(recipe.installer.as_str(), "binary-copy" | "appimage" | "appimage-appdir"))
             || (recipe.source == "cargo" && recipe.installer == "cargo-install")
             || (recipe.source == "bun" && recipe.installer == "bun-global")
             || (recipe.source == "flatpak" && recipe.installer == "flatpak");

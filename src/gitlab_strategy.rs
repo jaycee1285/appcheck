@@ -86,7 +86,7 @@ fn parse_content_length(headers: &str) -> Result<u64> {
             .flatten()
     });
     let length = length.context("GitLab asset did not report Content-Length")?;
-    ensure!(length >= 64, "GitLab release asset is too small to be an AppImage");
+    ensure!(length >= 64, "GitLab release asset is too small to contain an executable");
     Ok(length)
 }
 
@@ -104,8 +104,8 @@ fn make_plan(
         .context("No update recipe recorded for this app")?;
     ensure!(
         recipe.source == "gitlab"
-            && matches!(recipe.installer.as_str(), "appimage" | "appimage-appdir"),
-        "GitLab currently supports exact AppImage/AppDir recipes"
+            && matches!(recipe.installer.as_str(), "binary-copy" | "appimage" | "appimage-appdir"),
+        "GitLab currently supports exact binary/AppImage/AppDir recipes"
     );
     let expected = update::substitute(&recipe.asset, &release.tag_name);
     let matches: Vec<_> = release
@@ -200,6 +200,38 @@ arch = "x86_64"
         assert_eq!(plan.asset.name, "HelixNotes_1.3.5_amd64.AppImage");
         assert_eq!(plan.asset.size, 114_743_800);
         assert!(plan.asset.digest.is_none());
+        Ok(())
+    }
+
+    #[test]
+    fn exact_gitlab_link_becomes_a_direct_binary_plan() -> Result<()> {
+        let dir = tempfile::tempdir()?;
+        let path = dir.path().join("ledger.toml");
+        fs::write(&path, format!(r#"schema_version = 1
+[[apps]]
+identity = "https://gitlab.com/paskidev/gitorii"
+name = "torii"
+category = "Git"
+disposition = "considering"
+[apps.recipe]
+source = "gitlab"
+repo = "paskidev/gitorii"
+asset = "torii-linux-x86_64"
+installer = "binary-copy"
+destination = {destination:?}
+os = "linux"
+arch = "x86_64"
+"#, destination = dir.path().join("torii").to_string_lossy()))?;
+        let ledger = Ledger::open(&path)?;
+        let release: Release = serde_json::from_str(r#"{
+            "tag_name":"v0.7.15", "assets":{"links":[
+                {"name":"torii-linux-aarch64","direct_asset_url":"https://gitlab.com/other"},
+                {"name":"torii-linux-x86_64","direct_asset_url":"https://gitlab.com/api/v4/projects/81184073/packages/generic/gitorii/v0.7.15/torii-linux-x86_64"}
+            ]}
+        }"#)?;
+        let plan = make_plan(&ledger, 0, release, |_| Ok(8_000_000))?;
+        assert_eq!(plan.asset.name, "torii-linux-x86_64");
+        assert_eq!(plan.recipe.installer, "binary-copy");
         Ok(())
     }
 

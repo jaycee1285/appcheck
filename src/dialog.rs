@@ -1,4 +1,4 @@
-use crate::{batch, bun_strategy, cargo_strategy, flatpak_strategy, ledger::Ledger, update};
+use crate::{batch, bun_strategy, cargo_strategy, flatpak_strategy, ledger::{Disposition, Ledger}, update};
 use anyhow::Result;
 use std::{
     fs,
@@ -196,6 +196,21 @@ pub fn updates(
         batch.plans
     };
     install(ledger, &plans, dialog)
+}
+
+pub fn install_one(ledger: &mut Ledger, index: usize, dialog: &dyn Dialog) -> Result<String> {
+    let result = updates(ledger, Some(index), false, dialog)?;
+    if result.starts_with("Cancelled") || dialog.cancelled() {
+        return Ok(result);
+    }
+    if ledger.apps[index].disposition == Disposition::Considering
+        && (ledger.apps[index].provenance.managed_by_apptrack || ledger.apps[index].installed == Some(true))
+        && dialog.choose("Move installed app to Using?", &["Move to Using".into(), "Keep Considering".into()], Some(0))? == Some(0)
+    {
+        ledger.decide(index, Disposition::Using, None)?;
+        return Ok(format!("{result}\nMoved {} to Using.", ledger.apps[index].name));
+    }
+    Ok(result)
 }
 
 /// Each repository's user downloads and installs independently; commits are

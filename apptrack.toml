@@ -250,6 +250,22 @@ download_version = "0.24.1"
 noted_artifact_type = "tar.gz"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
 
+[apps.recipe]
+source = "github"
+repo = "msavox/cleecode"
+asset = "clee-{tag}-linux-x86_64.tar.gz"
+installer = "tar.gz"
+destination = "~/.local/bin/clee"
+os = "linux"
+arch = "x86_64"
+clean_filename = false
+member = "clee-{tag}-linux-x86_64/clee"
+
+[apps.launch]
+program = "~/.local/bin/clee"
+args = []
+gui = false
+
 
 [[apps]]
 identity = "https://github.com/vitali87/croft"
@@ -314,6 +330,22 @@ download_version = "0.6.0"
 noted_artifact_type = "tar.gz"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
 
+[apps.recipe]
+source = "github"
+repo = "getkono/karet"
+asset = "karet-x86_64-unknown-linux-musl.tar.gz"
+installer = "tar.gz"
+destination = "~/.local/bin/karet"
+os = "linux"
+arch = "x86_64"
+clean_filename = false
+member = "karet"
+
+[apps.launch]
+program = "~/.local/bin/karet"
+args = []
+gui = false
+
 
 [[apps]]
 identity = "name:kyanite"
@@ -357,6 +389,22 @@ download_version = "1.0.5"
 noted_artifact_type = "tar.gz"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
 
+[apps.recipe]
+source = "github"
+repo = "sollawen/microNeo"
+asset = "microneo-{version}-linux64.tar.gz"
+installer = "tar.gz"
+destination = "~/.local/bin/microneo"
+os = "linux"
+arch = "x86_64"
+clean_filename = false
+member = "microneo-{version}/microneo"
+
+[apps.launch]
+program = "~/.local/bin/microneo"
+args = []
+gui = false
+
 
 [[apps]]
 identity = "https://github.com/runyte/runyte"
@@ -377,6 +425,22 @@ imported_from = "~/syncthing/local-bins-appimage-notes.md"
 observed_on = "2026-09-09"
 noted_artifact_type = "unknown"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+[apps.recipe]
+source = "github"
+repo = "runyte/runyte"
+asset = "runyte-{tag}-x86_64-unknown-linux-gnu.tar.xz"
+installer = "tar.xz"
+destination = "~/.local/bin/runyte"
+os = "linux"
+arch = "x86_64"
+clean_filename = false
+member = "runyte-{version}-x86_64-unknown-linux-gnu/runyte"
+
+[apps.launch]
+program = "~/.local/bin/runyte"
+args = []
+gui = false
 
 
 [[apps]]
@@ -399,6 +463,22 @@ observed_on = "2026-09-09"
 download_version = "0.31.0 x86_64 musl replaced wrong-arch download"
 noted_artifact_type = "tar.gz"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+[apps.recipe]
+source = "github"
+repo = "termide/termide"
+asset = "termide-{tag}-x86_64-unknown-linux-musl.tar.gz"
+installer = "tar.gz"
+destination = "~/.local/bin/termide"
+os = "linux"
+arch = "x86_64"
+clean_filename = false
+member = "termide"
+
+[apps.launch]
+program = "~/.local/bin/termide"
+args = []
+gui = false
 
 
 [[apps]]
@@ -429,6 +509,17 @@ noted_artifact_type = "zip"
 program = "~/.local/bin/toast-linux-amd64"
 args = []
 gui = false
+
+[apps.recipe]
+source = "github"
+repo = "paradise-runner/toast"
+asset = "toast-linux-amd64.zip"
+installer = "zip"
+destination = "~/.local/bin/toast-linux-amd64"
+os = "linux"
+arch = "x86_64"
+clean_filename = false
+member = "toast-linux-amd64"
 
 
 [[apps]]
@@ -510,6 +601,22 @@ download_version = "1.3.0; ycode binary identity assumed in notes"
 noted_artifact_type = "tar.gz"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
 
+[apps.recipe]
+source = "github"
+repo = "vsdudakov/yara-code"
+asset = "ycode-{tag}-x86_64-unknown-linux-gnu.tar.gz"
+installer = "tar.gz"
+destination = "~/.local/bin/ycode"
+os = "linux"
+arch = "x86_64"
+clean_filename = false
+member = "ycode-{tag}-x86_64-unknown-linux-gnu/ycode"
+
+[apps.launch]
+program = "~/.local/bin/ycode"
+args = []
+gui = false
+
 
 # Added explicitly — installation/provenance not yet verified.
 [[apps]]
@@ -585,6 +692,19 @@ download_version = "0.1.1"
 noted_artifact_type = "tar.xz"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
 
+[apps.recipe]
+source = "cargo"
+installer = "cargo-install"
+package = "edamame"
+registry = "crates-io"
+root = "~/.cargo"
+bins = ["edamame"]
+
+[apps.launch]
+program = "~/.cargo/bin/edamame"
+args = []
+gui = false
+
 
 [[apps]]
 identity = "https://github.com/OlaProeis/Ferrite"
@@ -607,9 +727,25 @@ download_version = "0.3.0 from downloaded binary"
 noted_artifact_type = "tar.gz"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
 
+[apps.recipe]
+source = "github"
+repo = "OlaProeis/Ferrite"
+asset = "ferrite-linux-x64.tar.gz"
+installer = "tar.gz"
+destination = "~/.local/bin/ferrite"
+os = "linux"
+arch = "x86_64"
+clean_filename = false
+member = "ferrite"
+
+[apps.launch]
+program = "~/.local/bin/ferrite"
+args = []
+gui = true
+
 
 [[apps]]
-identity = "name:ink-md"
+identity = "https://github.com/borghei/ink"
 name = "ink-md"
 category = "Writing"
 description = "Markdown terminal viewer"
@@ -623,6 +759,7 @@ installed_paths = [
 
 [apps.provenance]
 source = "manual"
+repo = "https://github.com/borghei/ink"
 managed_by_apptrack = false
 
 [apps.evidence]
@@ -634,6 +771,15 @@ noted_artifact_type = "unknown"
 program = "~/.local/bin/ink-md"
 args = []
 gui = false
+
+[apps.recipe]
+source = "cargo"
+installer = "cargo-install"
+clean_filename = false
+package = "ink-md"
+registry = "crates-io"
+root = "~/.cargo"
+bins = ["ink"]
 
 
 [[apps]]
@@ -656,6 +802,19 @@ observed_on = "2026-09-09"
 download_version = "3.0.3 from downloaded binary"
 noted_artifact_type = "tar.gz"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+[apps.recipe]
+source = "cargo"
+installer = "cargo-install"
+package = "inkhaven"
+registry = "crates-io"
+root = "~/.cargo"
+bins = ["inkhaven"]
+
+[apps.launch]
+program = "~/.cargo/bin/inkhaven"
+args = []
+gui = false
 
 
 [[apps]]
@@ -732,6 +891,20 @@ download_version = "0.3.0"
 noted_artifact_type = "appimage"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
 
+[apps.recipe]
+source = "github"
+repo = "Vesperino/MerMarkEditor"
+asset = "MerMark.Editor_{version}_amd64.AppImage"
+installer = "appimage"
+destination = "~/.local/bin/mermarkeditor"
+os = "linux"
+arch = "x86_64"
+
+[apps.launch]
+program = "appimage-run"
+args = ["~/.local/bin/mermarkeditor"]
+gui = true
+
 
 [[apps]]
 identity = "https://github.com/Razee4415/Paperling"
@@ -776,6 +949,20 @@ download_version = "0.5.2"
 noted_artifact_type = "appimage"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
 
+[apps.recipe]
+source = "github"
+repo = "snooky234/scribedog"
+asset = "ScribeDog_{version}_amd64.AppImage"
+installer = "appimage"
+destination = "~/.local/bin/scribedog"
+os = "linux"
+arch = "x86_64"
+
+[apps.launch]
+program = "appimage-run"
+args = ["~/.local/bin/scribedog"]
+gui = true
+
 
 [[apps]]
 identity = "https://github.com/shizumu-app/shizumu"
@@ -808,7 +995,7 @@ gui = true
 
 
 [[apps]]
-identity = "https://github.com/csymd/symsight"
+identity = "https://github.com/symworx/symsight"
 name = "symsight"
 category = "Writing"
 description = "CLI/TUI for generating article and social-post insights."
@@ -818,7 +1005,7 @@ outcome = "unknown"
 
 [apps.provenance]
 source = "unknown"
-repo = "https://github.com/csymd/symsight"
+repo = "https://github.com/symworx/symsight"
 managed_by_apptrack = false
 
 [apps.evidence]
@@ -827,6 +1014,21 @@ observed_on = "2026-09-09"
 download_version = "0.2.2"
 noted_artifact_type = "binary"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+[apps.recipe]
+source = "github"
+repo = "symworx/symsight"
+asset = "symsight-{tag}-x86_64-unknown-linux-gnu"
+installer = "binary-copy"
+destination = "~/.local/bin/symsight"
+os = "linux"
+arch = "x86_64"
+clean_filename = false
+
+[apps.launch]
+program = "~/.local/bin/symsight"
+args = []
+gui = false
 
 
 [[apps]]
@@ -850,6 +1052,22 @@ download_version = "0.7.2"
 noted_artifact_type = "tar.gz"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
 note = "Older notes list ~/.local/bin/velotype; that path was absent during bootstrap."
+
+[apps.recipe]
+source = "github"
+repo = "manyougz/velotype"
+asset = "velotype-{tag}-linux-x86_64.tar.gz"
+installer = "tar.gz"
+destination = "~/.local/bin/velotype"
+os = "linux"
+arch = "x86_64"
+clean_filename = false
+member = "velotype"
+
+[apps.launch]
+program = "~/.local/bin/velotype"
+args = []
+gui = true
 
 
 
@@ -876,6 +1094,20 @@ download_version = "2.0.0"
 noted_artifact_type = "appimage"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
 
+[apps.recipe]
+source = "github"
+repo = "tunabirgun/arf"
+asset = "Arf_{version}_amd64.AppImage"
+installer = "appimage"
+destination = "~/.local/bin/arf"
+os = "linux"
+arch = "x86_64"
+
+[apps.launch]
+program = "appimage-run"
+args = ["~/.local/bin/arf"]
+gui = true
+
 
 [[apps]]
 identity = "https://github.com/reekta92/clin-rs"
@@ -897,6 +1129,22 @@ observed_on = "2026-09-09"
 download_version = "0.12"
 noted_artifact_type = "tar.gz"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+[apps.recipe]
+source = "github"
+repo = "reekta92/clin-rs"
+asset = "clin-rs-x86_64-unknown-linux-gnu.tar.xz"
+installer = "tar.xz"
+destination = "~/.local/bin/clin"
+os = "linux"
+arch = "x86_64"
+clean_filename = false
+member = "clin"
+
+[apps.launch]
+program = "~/.local/bin/clin"
+args = []
+gui = false
 
 
 [[apps]]
@@ -940,6 +1188,22 @@ observed_on = "2026-09-09"
 download_version = "0.5.0"
 noted_artifact_type = "tar.gz"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+[apps.recipe]
+source = "github"
+repo = "iamrohithrnair/emeraldian"
+asset = "emeraldian-x86_64-unknown-linux-gnu.tar.gz"
+installer = "tar.gz"
+destination = "~/.local/bin/emeraldian"
+os = "linux"
+arch = "x86_64"
+clean_filename = false
+member = "emeraldian-x86_64-unknown-linux-gnu/emeraldian"
+
+[apps.launch]
+program = "~/.local/bin/emeraldian"
+args = []
+gui = false
 
 
 [[apps]]
@@ -1063,6 +1327,17 @@ program = "~/.local/bin/ontoloom"
 args = []
 gui = false
 
+[apps.recipe]
+source = "github"
+repo = "jonathanpopham/ontoloom"
+asset = "ontoloom-{tag}-x86_64-unknown-linux-musl.tar.gz"
+installer = "tar.gz"
+destination = "~/.local/bin/ontoloom"
+os = "linux"
+arch = "x86_64"
+clean_filename = false
+member = "ontoloom"
+
 
 [[apps]]
 identity = "https://github.com/roblillack/piki"
@@ -1084,6 +1359,20 @@ observed_on = "2026-09-09"
 download_version = "0.7"
 noted_artifact_type = "binary"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+[apps.recipe]
+source = "cargo"
+installer = "cargo-install"
+clean_filename = false
+package = "piki"
+registry = "crates-io"
+root = "~/.cargo"
+bins = ["piki"]
+
+[apps.launch]
+program = "~/.cargo/bin/piki"
+args = []
+gui = false
 
 
 [[apps]]
@@ -1364,6 +1653,22 @@ download_version = "0.81.2"
 noted_artifact_type = "tar.gz"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
 
+[apps.recipe]
+source = "github"
+repo = "1jehuang/jcode"
+asset = "jcode-linux-x86_64.tar.gz"
+installer = "tar.gz"
+destination = "~/.local/bin/jcode"
+os = "linux"
+arch = "x86_64"
+clean_filename = false
+member = "jcode-linux-x86_64.bin"
+
+[apps.launch]
+program = "~/.local/bin/jcode"
+args = []
+gui = false
+
 
 
 # ── AI Workspaces ──────────────────────────────────────────────
@@ -1422,6 +1727,22 @@ imported_from = "~/syncthing/local-bins-appimage-notes.md"
 observed_on = "2026-09-09"
 noted_artifact_type = "unknown"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+[apps.recipe]
+source = "github"
+repo = "milisp/codexia"
+asset = "codexia-web-{version}-linux-x86_64-gnu.tar.gz"
+installer = "tar.gz"
+destination = "~/.local/bin/codexia-web"
+os = "linux"
+arch = "x86_64"
+clean_filename = false
+member = "codexia-web"
+
+[apps.launch]
+program = "~/.local/bin/codexia-web"
+args = []
+gui = true
 
 
 [[apps]]
@@ -1488,6 +1809,20 @@ observed_on = "2026-09-09"
 download_version = "0.7.3"
 noted_artifact_type = "appimage"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+[apps.recipe]
+source = "github"
+repo = "crynta/terax-ai"
+asset = "Terax_{version}_amd64.AppImage"
+installer = "appimage"
+destination = "~/.local/bin/terax"
+os = "linux"
+arch = "x86_64"
+
+[apps.launch]
+program = "appimage-run"
+args = ["~/.local/bin/terax"]
+gui = true
 
 
 
@@ -1582,6 +1917,22 @@ download_version = "0.13.1"
 noted_artifact_type = "tar.gz"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
 
+[apps.recipe]
+source = "github"
+repo = "subinium/agf"
+asset = "agf-x86_64-unknown-linux-gnu.tar.gz"
+installer = "tar.gz"
+destination = "~/.local/bin/agf"
+os = "linux"
+arch = "x86_64"
+clean_filename = false
+member = "agf"
+
+[apps.launch]
+program = "~/.local/bin/agf"
+args = []
+gui = false
+
 
 [[apps]]
 identity = "https://github.com/akitaonrails/ai-usagebar"
@@ -1668,6 +2019,22 @@ download_version = "3.9.12"
 noted_artifact_type = "tar.gz"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
 
+[apps.recipe]
+source = "github"
+repo = "yvgude/lean-ctx"
+asset = "lean-ctx-x86_64-unknown-linux-musl.tar.gz"
+installer = "tar.gz"
+destination = "~/.local/bin/lean-ctx"
+os = "linux"
+arch = "x86_64"
+clean_filename = false
+member = "lean-ctx"
+
+[apps.launch]
+program = "~/.local/bin/lean-ctx"
+args = []
+gui = false
+
 
 [[apps]]
 identity = "https://github.com/samzong/Recall"
@@ -1712,6 +2079,20 @@ download_version = "2.6.2"
 noted_artifact_type = "tar.gz"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
 
+[apps.recipe]
+source = "cargo"
+installer = "cargo-install"
+clean_filename = false
+package = "vct-cli"
+registry = "crates-io"
+root = "~/.cargo"
+bins = ["vibe_coding_tracker"]
+
+[apps.launch]
+program = "~/.cargo/bin/vibe_coding_tracker"
+args = []
+gui = false
+
 
 
 # ── Git ──────────────────────────────────────────────
@@ -1737,6 +2118,22 @@ download_version = "0.6"
 noted_artifact_type = "tar.xz"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
 
+[apps.recipe]
+source = "github"
+repo = "rushirb2001/cohors"
+asset = "cohors-tui-x86_64-unknown-linux-gnu.tar.xz"
+installer = "tar.xz"
+destination = "~/.local/bin/cohors"
+os = "linux"
+arch = "x86_64"
+clean_filename = false
+member = "cohors-tui-x86_64-unknown-linux-gnu/cohors"
+
+[apps.launch]
+program = "~/.local/bin/cohors"
+args = []
+gui = false
+
 
 [[apps]]
 identity = "https://github.com/yetidevworks/drydock"
@@ -1759,6 +2156,22 @@ download_version = "1.0.0"
 noted_artifact_type = "tar.gz"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
 
+[apps.recipe]
+source = "github"
+repo = "yetidevworks/drydock"
+asset = "drydock-linux-x86_64.tar.gz"
+installer = "tar.gz"
+destination = "~/.local/bin/drydock"
+os = "linux"
+arch = "x86_64"
+clean_filename = false
+member = "drydock"
+
+[apps.launch]
+program = "~/.local/bin/drydock"
+args = []
+gui = false
+
 
 [[apps]]
 identity = "https://github.com/parazeeknova/gitcha"
@@ -1780,6 +2193,20 @@ observed_on = "2026-09-09"
 download_version = "0.1.71"
 noted_artifact_type = "appimage + tar.gz"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+[apps.recipe]
+source = "github"
+repo = "parazeeknova/gitcha"
+asset = "gitcha_{version}_x86_64.AppImage"
+installer = "appimage"
+destination = "~/.local/bin/gitcha"
+os = "linux"
+arch = "x86_64"
+
+[apps.launch]
+program = "appimage-run"
+args = ["~/.local/bin/gitcha"]
+gui = true
 
 
 [[apps]]
@@ -1810,6 +2237,14 @@ noted_artifact_type = "tar.gz"
 program = "~/.local/bin/gitpane"
 args = []
 gui = false
+
+[apps.recipe]
+source = "cargo"
+installer = "cargo-install"
+package = "gitpane"
+registry = "crates-io"
+root = "~/.cargo"
+bins = ["gitpane"]
 
 
 [[apps]]
@@ -1856,6 +2291,20 @@ download_version = "1.16.3"
 noted_artifact_type = "appimage"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
 
+[apps.recipe]
+source = "github"
+repo = "visorcraft/LinSync"
+asset = "LinSync-{version}-x86_64.AppImage"
+installer = "appimage"
+destination = "~/.local/bin/linsync"
+os = "linux"
+arch = "x86_64"
+
+[apps.launch]
+program = "appimage-run"
+args = ["~/.local/bin/linsync"]
+gui = true
+
 
 [[apps]]
 identity = "https://github.com/guille/revisa"
@@ -1877,6 +2326,22 @@ observed_on = "2026-09-09"
 download_version = "1.2.0"
 noted_artifact_type = "tar.gz"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+[apps.recipe]
+source = "github"
+repo = "guille/revisa"
+asset = "revisa_{tag}_linux_amd64.tar.gz"
+installer = "tar.gz"
+destination = "~/.local/bin/revisa"
+os = "linux"
+arch = "x86_64"
+clean_filename = false
+member = "revisa_{tag}_linux_amd64/revisa"
+
+[apps.launch]
+program = "~/.local/bin/revisa"
+args = []
+gui = true
 
 
 [[apps]]
@@ -1900,6 +2365,22 @@ download_version = "0.1.4"
 noted_artifact_type = "appimage"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
 
+[apps.recipe]
+source = "github"
+repo = "noahbclarkson/rgitui"
+asset = "rgitui-{version}-x86_64-linux.tar.gz"
+installer = "tar.gz"
+destination = "~/.local/bin/rgitui"
+os = "linux"
+arch = "x86_64"
+clean_filename = false
+member = "rgitui/rgitui"
+
+[apps.launch]
+program = "~/.local/bin/rgitui"
+args = []
+gui = true
+
 
 [[apps]]
 identity = "https://gitlab.com/paskidev/gitorii"
@@ -1921,6 +2402,21 @@ observed_on = "2026-09-09"
 download_version = "0.7.15 from downloaded binary"
 noted_artifact_type = "binary"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+[apps.recipe]
+source = "gitlab"
+repo = "paskidev/gitorii"
+asset = "torii-linux-x86_64"
+installer = "binary-copy"
+destination = "~/.local/bin/torii"
+os = "linux"
+arch = "x86_64"
+clean_filename = false
+
+[apps.launch]
+program = "~/.local/bin/torii"
+args = []
+gui = false
 
 
 
@@ -1947,6 +2443,22 @@ download_version = "1.12.0"
 noted_artifact_type = "tar.gz"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
 
+[apps.recipe]
+source = "github"
+repo = "elio-fm/elio"
+asset = "elio-{version}-x86_64-unknown-linux-gnu.tar.gz"
+installer = "tar.gz"
+destination = "~/.local/bin/elio"
+os = "linux"
+arch = "x86_64"
+clean_filename = false
+member = "elio-{version}-x86_64-unknown-linux-gnu/elio"
+
+[apps.launch]
+program = "~/.local/bin/elio"
+args = []
+gui = false
+
 
 [[apps]]
 identity = "https://github.com/GlitchAwakened/Favnyr"
@@ -1968,6 +2480,22 @@ observed_on = "2026-09-09"
 download_version = "0.3.1"
 noted_artifact_type = "tar.gz"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+[apps.recipe]
+source = "github"
+repo = "GlitchAwakened/Favnyr"
+asset = "favnyr-linux-x86_64.tar.gz"
+installer = "tar.gz"
+destination = "~/.local/bin/favnyr"
+os = "linux"
+arch = "x86_64"
+clean_filename = false
+member = "favnyr"
+
+[apps.launch]
+program = "~/.local/bin/favnyr"
+args = []
+gui = true
 
 
 [[apps]]
@@ -2011,6 +2539,19 @@ observed_on = "2026-09-09"
 download_version = "0.4.0"
 noted_artifact_type = "tar.gz"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+[apps.recipe]
+source = "cargo"
+installer = "cargo-install"
+package = "irona-cli"
+registry = "crates-io"
+root = "~/.cargo"
+bins = ["irona"]
+
+[apps.launch]
+program = "~/.cargo/bin/irona"
+args = []
+gui = false
 
 
 [[apps]]
@@ -2075,6 +2616,20 @@ observed_on = "2026-09-09"
 noted_artifact_type = "unknown"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
 
+[apps.recipe]
+source = "github"
+repo = "AdventDevInc/kudu"
+asset = "Kudu-x86_64.AppImage"
+installer = "appimage"
+destination = "~/.local/bin/kudu"
+os = "linux"
+arch = "x86_64"
+
+[apps.launch]
+program = "appimage-run"
+args = ["~/.local/bin/kudu"]
+gui = true
+
 
 [[apps]]
 identity = "https://github.com/graysky2/profile-cleaner"
@@ -2138,6 +2693,22 @@ download_version = "0.1.6"
 noted_artifact_type = "tar.gz"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
 
+[apps.recipe]
+source = "github"
+repo = "svg153/reclaimit"
+asset = "reclaimit_{version}_linux_amd64.tar.gz"
+installer = "tar.gz"
+destination = "~/.local/bin/reclaimit"
+os = "linux"
+arch = "x86_64"
+clean_filename = false
+member = "reclaimit"
+
+[apps.launch]
+program = "~/.local/bin/reclaimit"
+args = []
+gui = false
+
 
 [[apps]]
 identity = "https://github.com/alexm-dev/runa"
@@ -2160,6 +2731,19 @@ download_version = "0.12.0"
 noted_artifact_type = "tar.gz"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
 
+[apps.recipe]
+source = "cargo"
+installer = "cargo-install"
+package = "runa-tui"
+registry = "crates-io"
+root = "~/.cargo"
+bins = ["rn"]
+
+[apps.launch]
+program = "~/.cargo/bin/rn"
+args = []
+gui = false
+
 
 [[apps]]
 identity = "https://github.com/sh1zen/wisu"
@@ -2181,6 +2765,22 @@ observed_on = "2026-09-09"
 download_version = "0.1.6"
 noted_artifact_type = "tar.gz"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+[apps.recipe]
+source = "github"
+repo = "sh1zen/wisu"
+asset = "wisu-linux-x86_64.tar.gz"
+installer = "tar.gz"
+destination = "~/.local/bin/wisu"
+os = "linux"
+arch = "x86_64"
+clean_filename = false
+member = "wisu"
+
+[apps.launch]
+program = "~/.local/bin/wisu"
+args = []
+gui = false
 
 
 
@@ -2228,6 +2828,20 @@ download_version = "1.0.1"
 noted_artifact_type = "tar.gz"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
 
+[apps.recipe]
+source = "cargo"
+installer = "cargo-install"
+clean_filename = false
+package = "monitrs"
+registry = "crates-io"
+root = "~/.cargo"
+bins = ["monitrs"]
+
+[apps.launch]
+program = "~/.cargo/bin/monitrs"
+args = []
+gui = false
+
 
 [[apps]]
 identity = "https://github.com/Pommersche92/narsil"
@@ -2250,6 +2864,19 @@ download_version = "0.5.0"
 noted_artifact_type = "tar.gz"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
 
+[apps.recipe]
+source = "cargo"
+installer = "cargo-install"
+package = "narsil"
+registry = "crates-io"
+root = "~/.cargo"
+bins = ["narsil"]
+
+[apps.launch]
+program = "~/.cargo/bin/narsil"
+args = []
+gui = false
+
 
 [[apps]]
 identity = "https://github.com/pgkt04/rmon"
@@ -2271,6 +2898,22 @@ observed_on = "2026-09-09"
 download_version = "1.3.0"
 noted_artifact_type = "tar.gz"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+[apps.recipe]
+source = "github"
+repo = "pgkt04/rmon"
+asset = "rmon-{tag}-linux-x86_64.tar.gz"
+installer = "tar.gz"
+destination = "~/.local/bin/rmon"
+os = "linux"
+arch = "x86_64"
+clean_filename = false
+member = "rmon"
+
+[apps.launch]
+program = "~/.local/bin/rmon"
+args = []
+gui = false
 
 
 
@@ -2578,6 +3221,17 @@ program = "~/.local/bin/kettle"
 args = []
 gui = true
 
+[apps.recipe]
+source = "github"
+repo = "Reddimus/kettle"
+asset = "kettle-linux-x86_64.tar.gz"
+installer = "tar.gz"
+destination = "~/.local/bin/kettle"
+os = "linux"
+arch = "x86_64"
+clean_filename = false
+member = "kettle/kettle"
+
 
 [[apps]]
 identity = "https://github.com/l0ng-ai/tty7"
@@ -2821,6 +3475,20 @@ observed_on = "2026-09-09"
 noted_artifact_type = "unknown"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
 
+[apps.recipe]
+source = "github"
+repo = "wleeaf/projectum"
+asset = "Projectum-x86_64.AppImage"
+installer = "appimage"
+destination = "~/.local/bin/projectum"
+os = "linux"
+arch = "x86_64"
+
+[apps.launch]
+program = "appimage-run"
+args = ["~/.local/bin/projectum"]
+gui = true
+
 
 
 # ── Data & Documents ──────────────────────────────────────────────
@@ -2845,6 +3513,20 @@ observed_on = "2026-09-09"
 download_version = "0.5.88"
 noted_artifact_type = "appimage"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+[apps.recipe]
+source = "github"
+repo = "t8y2/dbx"
+asset = "DBX_{version}_amd64.AppImage"
+installer = "appimage"
+destination = "~/.local/bin/dbx"
+os = "linux"
+arch = "x86_64"
+
+[apps.launch]
+program = "appimage-run"
+args = ["~/.local/bin/dbx"]
+gui = true
 
 
 [[apps]]
@@ -2894,6 +3576,20 @@ imported_from = "~/syncthing/local-bins-appimage-notes.md"
 observed_on = "2026-09-09"
 noted_artifact_type = "appimage"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+[apps.recipe]
+source = "github"
+repo = "genspark-ai/genoffice"
+asset = "GenOffice-{version}.AppImage"
+installer = "appimage"
+destination = "~/.local/bin/genoffice"
+os = "linux"
+arch = "x86_64"
+
+[apps.launch]
+program = "appimage-run"
+args = ["~/.local/bin/genoffice"]
+gui = true
 
 
 [[apps]]
@@ -2957,6 +3653,20 @@ download_version = "unknown; old download, no confirmed version"
 noted_artifact_type = "appimage"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
 
+[apps.recipe]
+source = "github"
+repo = "Pawandeep-prog/revpdf-release"
+asset = "revpdf_editor-x86_64.AppImage"
+installer = "appimage"
+destination = "~/.local/bin/revpdf"
+os = "linux"
+arch = "x86_64"
+
+[apps.launch]
+program = "appimage-run"
+args = ["~/.local/bin/revpdf"]
+gui = true
+
 
 [[apps]]
 identity = "https://github.com/xanathar/tabela"
@@ -3004,6 +3714,20 @@ download_version = "0.1.0"
 noted_artifact_type = "appimage"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
 
+[apps.recipe]
+source = "github"
+repo = "packerlschupfer/gDiagram"
+asset = "gDiagram-{version}-x86_64.AppImage"
+installer = "appimage"
+destination = "~/.local/bin/gdiagram"
+os = "linux"
+arch = "x86_64"
+
+[apps.launch]
+program = "appimage-run"
+args = ["~/.local/bin/gdiagram"]
+gui = true
+
 
 [[apps]]
 identity = "https://github.com/OpenCoworkAI/open-codesign"
@@ -3025,6 +3749,20 @@ observed_on = "2026-09-09"
 download_version = "0.1.4"
 noted_artifact_type = "appimage"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+[apps.recipe]
+source = "github"
+repo = "OpenCoworkAI/open-codesign"
+asset = "open-codesign-{version}-x64.AppImage"
+installer = "appimage"
+destination = "~/.local/bin/open-codesign"
+os = "linux"
+arch = "x86_64"
+
+[apps.launch]
+program = "appimage-run"
+args = ["~/.local/bin/open-codesign"]
+gui = true
 
 
 [[apps]]
@@ -3093,6 +3831,22 @@ imported_from = "~/syncthing/local-bins-appimage-notes.md"
 observed_on = "2026-09-09"
 noted_artifact_type = "unknown"
 uncertainty = "No executable found at the checked local/cargo/system/profile paths. Download or other installation may exist; installed state remains unknown."
+
+[apps.recipe]
+source = "github"
+repo = "tonhowtf/omniget"
+asset = "omniget-cli-{version}-x86_64-unknown-linux-gnu.tar.gz"
+installer = "tar.gz"
+destination = "~/.local/bin/omniget-cli"
+os = "linux"
+arch = "x86_64"
+clean_filename = false
+member = "omniget-cli"
+
+[apps.launch]
+program = "~/.local/bin/omniget-cli"
+args = []
+gui = true
 
 
 

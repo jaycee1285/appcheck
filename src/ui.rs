@@ -59,11 +59,14 @@ enum Mode {
     Detail {
         app: usize,
         scroll: u16,
+        source_open: bool,
+        record_open: bool,
     },
     Add {
         fields: [String; 5],
         field: usize,
         picker: Option<CategoryPicker>,
+        editing: Option<usize>,
     },
     Task(Box<crate::ui_task::Task>),
     Archive {
@@ -457,7 +460,7 @@ fn draw(frame: &mut Frame, ledger: &Ledger, state: &mut State, rows: &[Row]) {
         areas[2],
     );
     frame.render_widget(
-        Paragraph::new("↑↓ move  →← fold  Enter inspect\ng update  n Nix  m migrate  / search  ? help  q quit")
+        Paragraph::new("↑↓ move  →← fold  Enter inspect\ne edit  i install  n Nix  / search  ? help  q quit")
             .style(Style::default().add_modifier(Modifier::DIM)),
         areas[3],
     );
@@ -472,10 +475,11 @@ fn draw(frame: &mut Frame, ledger: &Ledger, state: &mut State, rows: &[Row]) {
                 Line::raw("Enter      Inspect"),
                 Line::raw("/          Search"),
                 Line::raw("a / A      Add / complete recipe"),
+                Line::raw("e          Edit / review source"),
                 Line::raw("U / C      Using / Considering"),
                 Line::raw("x          Archive with reason"),
                 Line::raw("o          Launch"),
-                Line::raw("u          Check / update"),
+                Line::raw("u / i      Update / install selected"),
                 Line::raw("n          Check Nixpkgs"),
                 Line::raw("m          Nix migrate (confirmed)"),
                 Line::raw("g          Update Using"),
@@ -486,15 +490,33 @@ fn draw(frame: &mut Frame, ledger: &Ledger, state: &mut State, rows: &[Row]) {
                 Line::raw("Direct Go: out of scope · Nix: landed"),
                 Line::raw("Esc / ?    Close help"),
             ],
-            19,
+            20,
         ),
-        Mode::Detail { app, scroll } => {
-            let text = doctor::report(&ledger.apps[*app], &ledger.record(*app));
+        Mode::Detail { app, scroll, source_open, record_open } => {
+            let assessment = doctor::install_assessment(&ledger.apps[*app]);
+            let text = doctor::report_with_sections(
+                &ledger.apps[*app], &ledger.record(*app), *source_open, *record_open,
+            );
+            let verdict_color = match assessment.verdict {
+                doctor::InstallVerdict::Ready => Color::Green,
+                doctor::InstallVerdict::Review => Color::Yellow,
+                doctor::InstallVerdict::Unavailable => Color::Red,
+            };
+            let lines: Vec<Line<'_>> = text.lines().map(|line| {
+                if line.starts_with("Install: ") {
+                    Line::from(vec![
+                        Span::raw("Install: "),
+                        Span::styled(assessment.verdict.label(), Style::default().fg(verdict_color).add_modifier(Modifier::BOLD)),
+                    ])
+                } else {
+                    Line::raw(line.to_owned())
+                }
+            }).collect();
             frame.render_widget(Clear, areas[1]);
             frame.render_widget(
-                Paragraph::new(text)
+                Paragraph::new(lines)
                     .block(Block::bordered().title(format!(
-                        " {} — ↑↓ scroll · Esc back · U/C/x decide · o launch ",
+                        " {} — ↑↓ scroll · s source · l record · Esc back ",
                         ledger.apps[*app].name
                     )))
                     .wrap(Wrap { trim: false })
@@ -517,6 +539,7 @@ fn draw(frame: &mut Frame, ledger: &Ledger, state: &mut State, rows: &[Row]) {
             fields,
             field,
             picker,
+            editing,
         } => {
             let labels = [
                 "Name",
@@ -551,7 +574,7 @@ fn draw(frame: &mut Frame, ledger: &Ledger, state: &mut State, rows: &[Row]) {
             lines.push(Line::raw(""));
             lines.push(Line::raw("Tab / Shift-Tab fields"));
             lines.push(Line::raw("Enter setup · ^S record · Esc"));
-            popup(frame, " Add to Considering ", lines, ADD_POPUP_HEIGHT);
+            popup(frame, if editing.is_some() { " Edit record " } else { " Add to Considering " }, lines, ADD_POPUP_HEIGHT);
             if let Some(picker) = picker {
                 match picker {
                     CategoryPicker::List(selected) => {
@@ -734,6 +757,7 @@ fn handle(
             fields,
             field,
             picker,
+            editing,
         } => {
             if picker.is_some() || (*field == 1 && key.code == KeyCode::Right) {
                 category_key(key.code, fields, picker, &categories(ledger));
@@ -743,6 +767,21 @@ fn handle(
                 key.modifiers.contains(KeyModifiers::CONTROL) && key.code == KeyCode::Char('s');
             if key.code == KeyCode::Enter || record_only {
                 let saved = fields.clone();
+                if let Some(index) = editing {
+                    let index = *index;
+                    ledger.edit_record(index, &saved[0], &saved[1], &saved[2], &saved[3], &saved[4])?;
+                    let source = ledger.apps[index].identity.clone();
+                    if !record_only && source.starts_with("https://github.com/") && ledger.apps[index].recipe.is_none() {
+                        state.mode = Mode::Task(Box::new(crate::ui_task::Task::start(
+                            ledger.clone(),
+                            move |ledger, dialog| crate::intake::configure_source(ledger, index, dialog),
+                        )));
+                    } else {
+                        state.mode = Mode::Detail { app: index, scroll: 0, source_open: false, record_open: false };
+                        state.message = "Record saved. Installation provenance is unchanged.".into();
+                    }
+                    return Ok(false);
+                }
                 if !record_only && !saved[2].trim().is_empty() {
                     state.mode = Mode::Task(Box::new(crate::ui_task::Task::start(
                         ledger.clone(),
@@ -766,6 +805,8 @@ fn handle(
                         state.mode = Mode::Detail {
                             app: index,
                             scroll: 0,
+                            source_open: false,
+                            record_open: false,
                         };
                         state.message = "Already tracked; opened existing record. Use a to complete its recipe.".into();
                     } else {
@@ -812,7 +853,17 @@ fn handle(
             }
             return Ok(false);
         }
-        Mode::Detail { scroll, .. } => match key.code {
+        Mode::Detail { scroll, source_open, record_open, .. } => match key.code {
+            KeyCode::Char('s') => {
+                *source_open = !*source_open;
+                *scroll = 0;
+                return Ok(false);
+            }
+            KeyCode::Char('l') => {
+                *record_open = !*record_open;
+                *scroll = 0;
+                return Ok(false);
+            }
             KeyCode::Down | KeyCode::Char('j') => {
                 *scroll = scroll.saturating_add(1);
                 return Ok(false);
@@ -864,7 +915,7 @@ fn handle(
                     state.archives.remove(category);
                 }
             }
-            Some(Row::App(i)) => state.mode = Mode::Detail { app: *i, scroll: 0 },
+            Some(Row::App(i)) => state.mode = Mode::Detail { app: *i, scroll: 0, source_open: false, record_open: false },
             _ => {}
         },
         KeyCode::Left => {
@@ -911,6 +962,19 @@ fn handle(
                 ],
                 field: 0,
                 picker: None,
+                editing: None,
+            };
+        }
+        KeyCode::Char('e') if app.is_some() => {
+            let i = app.unwrap();
+            let selected = &ledger.apps[i];
+            state.mode = Mode::Add {
+                fields: [selected.name.clone(), selected.category.clone(),
+                    if selected.identity.starts_with("name:") { String::new() } else { selected.identity.clone() },
+                    selected.description.clone(), selected.tags.join(", ")],
+                field: 0,
+                picker: None,
+                editing: Some(i),
             };
         }
         KeyCode::Char('U' | 'C') if app.is_some() => {
@@ -959,10 +1023,10 @@ fn handle(
                 move |ledger, dialog| nix_migrate::migrate(ledger, index, dialog, false, Some(dialog.cancel_flag())),
             )));
         }
-        KeyCode::Char('g' | 'G') | KeyCode::Char('u')
-            if app.is_some() || key.code != KeyCode::Char('u') =>
+        KeyCode::Char('g' | 'G') | KeyCode::Char('u' | 'i')
+            if app.is_some() || !matches!(key.code, KeyCode::Char('u' | 'i')) =>
         {
-            let single = if key.code == KeyCode::Char('u') {
+            let single = if matches!(key.code, KeyCode::Char('u' | 'i')) {
                 app
             } else {
                 None
@@ -970,7 +1034,13 @@ fn handle(
             let considering = include_considering(key);
             state.mode = Mode::Task(Box::new(crate::ui_task::Task::start(
                 ledger.clone(),
-                move |ledger, dialog| crate::dialog::updates(ledger, single, considering, dialog),
+                move |ledger, dialog| {
+                    if key.code == KeyCode::Char('i') {
+                        crate::dialog::install_one(ledger, single.unwrap(), dialog)
+                    } else {
+                        crate::dialog::updates(ledger, single, considering, dialog)
+                    }
+                },
             )));
         }
         KeyCode::Char('r') => {
@@ -1032,6 +1102,7 @@ fn event_loop(terminal: &mut DefaultTerminal, ledger: &mut Ledger) -> Result<()>
                     fields,
                     field,
                     picker,
+                    ..
                 } => match picker {
                     Some(CategoryPicker::Custom(value)) => value.push_str(&text),
                     None if *field != 1 => fields[*field].push_str(&text),
@@ -1196,6 +1267,7 @@ mod tests {
             ],
             field: 0,
             picker: None,
+            editing: None,
         };
         let (min_width, min_height) = minimum_size(&ledger, &state);
         let rows = render(&ledger, &mut state, min_width.max(60), min_height)?;
@@ -1248,6 +1320,7 @@ mod tests {
             ],
             field: 0,
             picker: None,
+            editing: None,
         };
         let (min_width, min_height) = minimum_size(&ledger, &state);
         let rows = render(&ledger, &mut state, min_width.max(60), min_height - 1)?;
@@ -1371,6 +1444,7 @@ mod tests {
                     ],
                     field: 0,
                     picker: None,
+                    editing: None,
                 },
             ),
             ("task", Mode::Task(Box::new(task))),
