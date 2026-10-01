@@ -56,6 +56,19 @@ fn latest(repo: &str, cancel: &std::sync::atomic::AtomicBool) -> Result<Release>
     serde_json::from_slice(&output.stdout).context("Unexpected GitLab release JSON")
 }
 
+pub(crate) fn inspect_release(repo: &str, cancel: &std::sync::atomic::AtomicBool) -> Result<update::Release> {
+    let release = latest(repo, cancel)?;
+    ensure!(!release.upcoming_release, "Latest GitLab release is upcoming");
+    ensure!(release.assets.links.len() <= 32, "Too many GitLab asset links for an interactive release review");
+    let mut assets = Vec::new();
+    for link in release.assets.links {
+        if !link.direct_asset_url.starts_with("https://") { continue; }
+        let size = content_length(&link.direct_asset_url, cancel)?;
+        assets.push(update::Asset { name: link.name, api_url: link.direct_asset_url, size, digest: None });
+    }
+    Ok(update::Release { tag_name: release.tag_name, is_prerelease: false, assets })
+}
+
 fn content_length(url: &str, cancel: &std::sync::atomic::AtomicBool) -> Result<u64> {
     let output = crate::work::output(
         Command::new("curl").args([

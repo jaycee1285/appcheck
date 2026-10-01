@@ -53,6 +53,18 @@ fn latest(repo: &str, cancel: &std::sync::atomic::AtomicBool) -> Result<Release>
     serde_json::from_slice(&output.stdout).context("Unexpected Codeberg release JSON")
 }
 
+pub(crate) fn inspect_release(repo: &str, cancel: &std::sync::atomic::AtomicBool) -> Result<update::Release> {
+    let release = latest(repo, cancel)?;
+    ensure!(!release.draft && !release.prerelease, "Latest Codeberg release is draft or prerelease");
+    Ok(update::Release {
+        tag_name: release.tag_name,
+        is_prerelease: false,
+        assets: release.assets.into_iter().map(|asset| update::Asset {
+            name: asset.name, api_url: asset.browser_download_url, size: asset.size, digest: None,
+        }).collect(),
+    })
+}
+
 fn make_plan(ledger: &Ledger, index: usize, release: Release) -> Result<update::Plan> {
     ensure!(!release.draft, "Draft Codeberg releases are not selected");
     ensure!(

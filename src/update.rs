@@ -47,6 +47,8 @@ pub struct Recipe {
     pub installation: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub branch: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub launch_from: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize)]

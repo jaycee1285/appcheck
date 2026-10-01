@@ -1,7 +1,8 @@
 use crate::{
+    android::{Catalog as AndroidCatalog, Listing as AndroidListing},
     dialog::Dialog,
     doctor,
-    ledger::{Disposition, Launch, Ledger, expand_path},
+    ledger::{AndroidRecord, Disposition, Launch, Ledger, expand_path},
     nix_discovery,
     nix_migrate,
 };
@@ -52,10 +53,126 @@ enum Row {
     App(usize),
 }
 
+#[derive(Clone, Debug, PartialEq)]
+enum AndroidRow {
+    Category(String),
+    Group(String, Option<Disposition>),
+    App(usize),
+}
+
+#[derive(Clone)]
+struct AndroidView {
+    catalog: AndroidCatalog,
+    selection: ListState,
+    expanded: HashSet<String>,
+    archives: HashSet<String>,
+    detail: Option<usize>,
+    query: String,
+    searching: bool,
+}
+
+impl AndroidView {
+    fn new(catalog: AndroidCatalog) -> Self {
+        Self { catalog, selection: ListState::default().with_selected(Some(0)),
+            expanded: HashSet::new(), archives: HashSet::new(), detail: None,
+            query: String::new(), searching: false }
+    }
+
+    fn categories(&self) -> Vec<String> {
+        let mut names: Vec<_> = self.catalog.apps.iter().filter(|app| !app.unlisted)
+            .flat_map(|app| if app.categories.is_empty() { vec!["Uncategorized".to_string()] } else { app.categories.clone() })
+            .collect();
+        names.sort_by_key(|name| name.to_lowercase());
+        names.dedup();
+        if let Some(index) = names.iter().position(|name| name == "Uncategorized") {
+            names.remove(index);
+            names.push("Uncategorized".into());
+        }
+        if self.catalog.apps.iter().any(|app| app.unlisted) { names.push("Unlisted".into()); }
+        names
+    }
+
+    fn in_category(app: &AndroidListing, category: &str) -> bool {
+        if category == "Unlisted" { return app.unlisted; }
+        if app.unlisted { return false; }
+        if category == "Uncategorized" { app.categories.is_empty() }
+        else { app.categories.iter().any(|name| name == category) }
+    }
+
+    fn count(&self, category: &str, disposition: Option<Disposition>) -> usize {
+        self.catalog.apps.iter().filter(|app| Self::in_category(app, category) && app.disposition == disposition).count()
+    }
+
+    fn rows(&self) -> Vec<AndroidRow> {
+        if !self.query.is_empty() {
+            let mut matches: Vec<_> = self.catalog.apps.iter().enumerate()
+                .filter_map(|(i, app)| fuzzy_score(&self.query, &format!("{} {} {} {}", app.name, app.identity, app.categories.join(" "), app.description))
+                    .map(|score| (score, i))).collect();
+            matches.sort_by_key(|(score, _)| *score);
+            return matches.into_iter().map(|(_, i)| AndroidRow::App(i)).collect();
+        }
+        let mut rows = Vec::new();
+        for category in self.categories() {
+            rows.push(AndroidRow::Category(category.clone()));
+            if !self.expanded.contains(&category) { continue; }
+            for disposition in [Some(Disposition::Using), Some(Disposition::Considering), Some(Disposition::Archived), None] {
+                let count = self.count(&category, disposition);
+                if count == 0 { continue; }
+                rows.push(AndroidRow::Group(category.clone(), disposition));
+                if disposition == Some(Disposition::Archived) && !self.archives.contains(&category) { continue; }
+                let mut indices: Vec<_> = self.catalog.apps.iter().enumerate()
+                    .filter(|(_, app)| Self::in_category(app, &category) && app.disposition == disposition)
+                    .map(|(i, _)| i).collect();
+                indices.sort_by_key(|i| self.catalog.apps[*i].name.to_lowercase());
+                rows.extend(indices.into_iter().map(AndroidRow::App));
+            }
+        }
+        rows
+    }
+
+    fn focus(&mut self, app: usize) {
+        let listing = &self.catalog.apps[app];
+        let category = if listing.unlisted { "Unlisted".to_string() }
+            else { listing.categories.first().cloned().unwrap_or_else(|| "Uncategorized".into()) };
+        self.expanded.insert(category.clone());
+        if listing.disposition == Some(Disposition::Archived) { self.archives.insert(category); }
+        if let Some(position) = self.rows().iter().position(|row| *row == AndroidRow::App(app)) {
+            self.selection.select(Some(position));
+        }
+    }
+}
+
+fn save_android_listing(ledger: &mut Ledger, catalog: &AndroidCatalog, app: usize,
+    disposition: Option<Disposition>, description: &str, reason: &str) -> Result<()> {
+    let listing = &catalog.apps[app];
+    if let Some(index) = listing.note_index {
+        return ledger.edit_android(index, disposition, description, reason);
+    }
+    let file = catalog.file.file_name().and_then(|name| name.to_str()).unwrap_or("Android export");
+    let record = AndroidRecord {
+        identity: listing.identity.clone(), name: listing.name.clone(),
+        categories: listing.categories.clone(), has_category_snapshot: true,
+        disposition, description: description.trim().into(), archived_because: reason.trim().into(),
+        author: listing.author.clone(), installed_version: listing.installed_version.clone(),
+        latest_version: listing.latest_version.clone(), imported_from: file.into(),
+        observed_on: file.split("-export-").nth(1).unwrap_or("").chars().take(10).collect(),
+    };
+    ledger.add_android(&record)
+}
+
 enum Mode {
     Browse,
     Help,
     Search,
+    Android(AndroidView),
+    AndroidEdit {
+        view: Box<AndroidView>,
+        app: usize,
+        field: usize,
+        disposition: Option<Disposition>,
+        description: String,
+        reason: String,
+    },
     Detail {
         app: usize,
         scroll: u16,
@@ -83,6 +200,17 @@ enum CategoryPicker {
 fn include_considering(key: KeyEvent) -> bool {
     key.code == KeyCode::Char('G')
         || (key.code == KeyCode::Char('g') && key.modifiers.contains(KeyModifiers::SHIFT))
+}
+
+fn android_key(key: KeyEvent) -> bool {
+    key.code == KeyCode::Char('A')
+        || (key.code == KeyCode::Char('a') && key.modifiers.contains(KeyModifiers::SHIFT))
+}
+
+fn cycle_disposition(current: Option<Disposition>, forward: bool) -> Option<Disposition> {
+    let states = [None, Some(Disposition::Using), Some(Disposition::Considering), Some(Disposition::Archived)];
+    let position = states.iter().position(|state| *state == current).unwrap_or(0);
+    states[(position + if forward { 1 } else { states.len() - 1 }) % states.len()]
 }
 
 fn category_key(
@@ -267,8 +395,9 @@ fn count_digits(ledger: &Ledger) -> usize {
 fn minimum_size(ledger: &Ledger, state: &State) -> (u16, u16) {
     let height = match state.mode {
         Mode::Add { .. } => ADD_POPUP_HEIGHT,
+        Mode::AndroidEdit { .. } => 11,
         Mode::Archive { .. } => 9,
-        Mode::Help => 19,
+        Mode::Help => 21,
         // One body row, a choice prompt, status, footer, border, and a margin row.
         Mode::Task(_) => 12,
         _ => 8,
@@ -325,11 +454,126 @@ fn count_cells(values: [usize; 3], digits: usize, labels: bool) -> Vec<Span<'sta
     cells
 }
 
+fn draw_android(frame: &mut Frame, view: &mut AndroidView, message: &str) {
+    let apps = &view.catalog.apps;
+    let total = apps.iter().filter(|app| !app.unlisted).count();
+    let unlisted = apps.len() - total;
+    let counts = [Some(Disposition::Using), Some(Disposition::Considering), Some(Disposition::Archived), None]
+        .map(|status| apps.iter().filter(|app| !app.unlisted && app.disposition == status).count());
+    let rows = view.rows();
+    view.selection.select(if rows.is_empty() { None } else { Some(view.selection.selected().unwrap_or(0).min(rows.len() - 1)) });
+    let areas = Layout::vertical([Constraint::Length(2), Constraint::Min(1), Constraint::Length(2)]).split(frame.area());
+    let heading = Line::from(vec![
+        Span::styled(" Android Track", Style::default().add_modifier(Modifier::BOLD)),
+        Span::raw(format!(" · {total} apps  U {} | C {} | A {} | Untagged {} | Unlisted {unlisted}", counts[0], counts[1], counts[2], counts[3])),
+    ]);
+    frame.render_widget(Paragraph::new(heading).block(Block::default().borders(Borders::BOTTOM)), areas[0]);
+    if let Some(index) = view.detail {
+        let app = &apps[index];
+        let categories = if app.categories.is_empty() { "Uncategorized".into() } else { app.categories.join(", ") };
+        let status = app.disposition.map_or("Untagged", Disposition::label);
+        let text = format!(
+            "Status: {status}{}\nCategory: {categories}\nDescription: {}\nArchive reason: {}\n\nPackage: {}\nAuthor: {}\nInstalled: {}\nLatest: {}\nSource: {}\nExport: {}",
+            if app.unlisted { " · Unlisted" } else { "" }, app.description, app.archived_because,
+            app.identity.trim_start_matches("android:"), app.author, app.installed_version,
+            app.latest_version, if app.url.is_empty() { "saved snapshot" } else { &app.url },
+            view.catalog.file.file_name().and_then(|name| name.to_str()).unwrap_or("unknown"),
+        );
+        frame.render_widget(Paragraph::new(text).block(Block::bordered().title(format!(" {} ", app.name)))
+            .wrap(Wrap { trim: false }), areas[1]);
+    } else {
+        let items: Vec<_> = rows.iter().map(|row| {
+            let line = match row {
+                AndroidRow::Category(category) => {
+                    let totals = [
+                        view.count(category, Some(Disposition::Using)),
+                        view.count(category, Some(Disposition::Considering)),
+                        view.count(category, Some(Disposition::Archived)),
+                        view.count(category, None),
+                    ];
+                    let mut cells = vec![Span::styled(
+                        format!("{} {}", if view.expanded.contains(category) { "▾" } else { "▸" }, fit(category, 24)),
+                        Style::default().add_modifier(Modifier::BOLD),
+                    )];
+                    cells.extend(count_cells([totals[0], totals[1], totals[2]], 2, false));
+                    cells.push(Span::styled(format!("{:>3} ○", totals[3]), Style::default()));
+                    Line::from(cells)
+                }
+                AndroidRow::Group(category, status) => {
+                    let (label, tint) = match status {
+                        Some(Disposition::Using) => ("Using", Color::Green),
+                        Some(Disposition::Considering) => ("Considering", Color::Yellow),
+                        Some(Disposition::Archived) => ("Archived", Color::Red),
+                        None => ("Untagged", Color::Reset),
+                    };
+                    let count = view.count(category, *status);
+                    let fold = if *status == Some(Disposition::Archived) {
+                        if view.archives.contains(category) { "▾ " } else { "▸ " }
+                    } else { "" };
+                    Line::styled(format!("  {fold}{label} {count}"), Style::default().fg(tint).add_modifier(Modifier::BOLD))
+                }
+                AndroidRow::App(index) => {
+                    let app = &apps[*index];
+                    let (marker, tint) = match app.disposition {
+                        Some(status) => ("●", color(status)), None => ("○", Color::Reset),
+                    };
+                    Line::from(vec![
+                        Span::styled(format!("  {marker} "), Style::default().fg(tint)),
+                        Span::raw(&app.name),
+                        Span::raw(if view.query.is_empty() && !app.unlisted { String::new() }
+                            else { format!("  · {}", if app.categories.is_empty() { "Uncategorized".into() } else { app.categories.join(", ") }) }),
+                        Span::styled(if app.description.is_empty() { String::new() } else { format!("  — {}", app.description) },
+                            Style::default().add_modifier(Modifier::DIM)),
+                    ])
+                }
+            };
+            ListItem::new(line)
+        }).collect();
+        frame.render_stateful_widget(List::new(items)
+            .block(Block::default().title(if view.query.is_empty() { "Categories · → expand · Enter inspect".into() }
+                else { format!("/{} · {} matches", view.query, rows.len()) }))
+            .highlight_symbol("› ").highlight_style(Style::default().add_modifier(Modifier::REVERSED)),
+            areas[1], &mut view.selection);
+    }
+    let footer = if view.searching { format!("/{}▏ · Enter results · Esc clear", view.query) }
+        else if !message.is_empty() { message.into() }
+        else if view.detail.is_some() { "e edit · Esc categories · r reload".into() }
+        else { "↑↓ move · →← fold · Enter inspect · U/C/0 · x archive\ne edit · / search · r reload · Esc desktop".into() };
+    frame.render_widget(Paragraph::new(footer), areas[2]);
+}
+
+fn android_editor(frame: &mut Frame, record: &AndroidListing, field: usize, disposition: Option<Disposition>, description: &str, reason: &str) {
+    let label = disposition.map_or("Untagged", Disposition::label);
+    let width = frame.area().width.saturating_sub(6) as usize;
+    popup(frame, &format!(" Android · {} ", record.name), vec![
+        Line::raw("Status (←/→ or U/C/A/0)"),
+        Line::raw(fit(&format!("{} {label}", if field == 0 { "›" } else { " " }), width)),
+        Line::raw("Description"),
+        Line::raw(fit(&format!("{} {description}{}", if field == 1 { "›" } else { " " }, if field == 1 { "▏" } else { "" }), width)),
+        Line::raw("Archive reason"),
+        Line::raw(fit(&format!("{} {reason}{}", if field == 2 { "›" } else { " " }, if field == 2 { "▏" } else { "" }), width)),
+        Line::raw(""),
+        Line::raw("Tab fields · Enter save · Esc cancel"),
+    ], 11);
+}
+
 fn draw(frame: &mut Frame, ledger: &Ledger, state: &mut State, rows: &[Row]) {
     let (min_width, min_height) = minimum_size(ledger, state);
     if frame.area().width < min_width || frame.area().height < min_height {
         frame.render_widget(Paragraph::new(format!("Track\nNeed {min_width} columns × {min_height} rows\nResize to continue\nq quit · Esc back")).wrap(Wrap { trim: false }), frame.area());
         return;
+    }
+    match &mut state.mode {
+        Mode::Android(view) => {
+            draw_android(frame, view, &state.message);
+            return;
+        }
+        Mode::AndroidEdit { view, app, field, disposition, description, reason } => {
+            draw_android(frame, view, "");
+            android_editor(frame, &view.catalog.apps[*app], *field, *disposition, description, reason);
+            return;
+        }
+        _ => {}
     }
     let digits = count_digits(ledger);
     let category_width = categories(ledger)
@@ -460,7 +704,7 @@ fn draw(frame: &mut Frame, ledger: &Ledger, state: &mut State, rows: &[Row]) {
         areas[2],
     );
     frame.render_widget(
-        Paragraph::new("↑↓ move  →← fold  Enter inspect\ne edit  i install  n Nix  / search  ? help  q quit")
+        Paragraph::new("↑↓ move  →← fold  Enter inspect\na add  Shift-A Android  e edit  c check  r release  i install  / search  ? help")
             .style(Style::default().add_modifier(Modifier::DIM)),
         areas[3],
     );
@@ -474,23 +718,22 @@ fn draw(frame: &mut Frame, ledger: &Ledger, state: &mut State, rows: &[Row]) {
                 Line::raw("→ / ←      Expand / parent"),
                 Line::raw("Enter      Inspect"),
                 Line::raw("/          Search"),
-                Line::raw("a / A      Add / complete recipe"),
+                Line::raw("a          Add / complete recipe"),
+                Line::raw("Shift-A    Android notes"),
                 Line::raw("e          Edit / review source"),
+                Line::raw("c          Check all source routes"),
+                Line::raw("r          Check release artifacts"),
                 Line::raw("U / C      Using / Considering"),
                 Line::raw("x          Archive with reason"),
                 Line::raw("o          Launch"),
                 Line::raw("u / i      Update / install selected"),
-                Line::raw("n          Check Nixpkgs"),
-                Line::raw("m          Nix migrate (confirmed)"),
-                Line::raw("g          Update Using"),
-                Line::raw("G          + Considering"),
-                Line::raw("r          Reload ledger"),
+                Line::raw("n / m      Nix check / migrate"),
+                Line::raw("g / G      Update Using / + Considering"),
+                Line::raw("R          Reload ledger"),
                 Line::raw("q          Back / quit"),
-                Line::raw(""),
-                Line::raw("Direct Go: out of scope · Nix: landed"),
                 Line::raw("Esc / ?    Close help"),
             ],
-            20,
+            21,
         ),
         Mode::Detail { app, scroll, source_open, record_open } => {
             let assessment = doctor::install_assessment(&ledger.apps[*app]);
@@ -624,7 +867,7 @@ fn draw(frame: &mut Frame, ledger: &Ledger, state: &mut State, rows: &[Row]) {
                 9,
             );
         }
-        Mode::Browse => {}
+        Mode::Android(_) | Mode::AndroidEdit { .. } | Mode::Browse => {}
     }
 }
 
@@ -731,6 +974,120 @@ fn handle(
             task.key(key);
             return Ok(false);
         }
+        Mode::Android(view) => {
+            if view.searching {
+                match key.code {
+                    KeyCode::Esc => { view.query.clear(); view.searching = false; }
+                    KeyCode::Enter => view.searching = false,
+                    KeyCode::Backspace => { view.query.pop(); }
+                    KeyCode::Char(c) => view.query.push(c),
+                    _ => {}
+                }
+                view.selection.select(Some(0));
+                return Ok(false);
+            }
+            let rows = view.rows();
+            let selected = view.selection.selected().unwrap_or(0).min(rows.len().saturating_sub(1));
+            let app = view.detail.or_else(|| match rows.get(selected) { Some(AndroidRow::App(i)) => Some(*i), _ => None });
+            match key.code {
+                KeyCode::Esc | KeyCode::Char('q') => {
+                    if view.detail.take().is_some() {}
+                    else if !view.query.is_empty() { view.query.clear(); view.selection.select(Some(0)); }
+                    else { state.mode = Mode::Browse; }
+                }
+                KeyCode::Char('/') if view.detail.is_none() => {
+                    view.query.clear(); view.searching = true;
+                }
+                KeyCode::Char('r') => {
+                    *ledger = Ledger::open(&ledger.path)?;
+                    view.catalog = AndroidCatalog::load(ledger)?;
+                    state.message = "Android export and TOML reloaded.".into();
+                }
+                KeyCode::Char('e' | 'x') if app.is_some() => {
+                    let index = app.unwrap();
+                    let listing = &view.catalog.apps[index];
+                    let archive = key.code == KeyCode::Char('x');
+                    state.mode = Mode::AndroidEdit {
+                        view: Box::new(view.clone()), app: index, field: if archive { 2 } else { 1 },
+                        disposition: if archive { Some(Disposition::Archived) } else { listing.disposition },
+                        description: listing.description.clone(), reason: listing.archived_because.clone(),
+                    };
+                }
+                KeyCode::Char('U' | 'C' | '0') if app.is_some() => {
+                    let index = app.unwrap();
+                    let listing = &view.catalog.apps[index];
+                    let name = listing.name.clone();
+                    let status = match key.code {
+                        KeyCode::Char('U') => Some(Disposition::Using),
+                        KeyCode::Char('C') => Some(Disposition::Considering),
+                        _ => None,
+                    };
+                    save_android_listing(ledger, &view.catalog, index, status, &listing.description, &listing.archived_because)?;
+                    view.catalog = AndroidCatalog::from_export(ledger, &view.catalog.file)?;
+                    view.focus(index);
+                    state.message = format!("{name} status saved.");
+                }
+                KeyCode::Up | KeyCode::Char('k') if view.detail.is_none() => view.selection.select(Some(selected.saturating_sub(1))),
+                KeyCode::Down | KeyCode::Char('j') if view.detail.is_none() => view.selection.select(Some((selected + 1).min(rows.len().saturating_sub(1)))),
+                KeyCode::PageUp if view.detail.is_none() => view.selection.select(Some(selected.saturating_sub(10))),
+                KeyCode::PageDown if view.detail.is_none() => view.selection.select(Some((selected + 10).min(rows.len().saturating_sub(1)))),
+                KeyCode::Right | KeyCode::Enter if view.detail.is_none() => match rows.get(selected) {
+                    Some(AndroidRow::Category(category)) => { view.expanded.insert(category.clone()); }
+                    Some(AndroidRow::Group(category, Some(Disposition::Archived))) => {
+                        if !view.archives.insert(category.clone()) { view.archives.remove(category); }
+                    }
+                    Some(AndroidRow::App(index)) => view.detail = Some(*index),
+                    _ => {}
+                },
+                KeyCode::Left if view.detail.is_none() => {
+                    if !view.query.is_empty() { view.query.clear(); view.selection.select(Some(0)); }
+                    else if let Some(row) = rows.get(selected) {
+                        let category = match row {
+                            AndroidRow::Category(category) | AndroidRow::Group(category, _) => category.clone(),
+                            AndroidRow::App(index) => {
+                                let listing = &view.catalog.apps[*index];
+                                if listing.unlisted { "Unlisted".into() }
+                                else { listing.categories.first().cloned().unwrap_or_else(|| "Uncategorized".into()) }
+                            }
+                        };
+                        view.expanded.remove(&category);
+                        view.archives.remove(&category);
+                        view.selection.select(view.rows().iter().position(|row| *row == AndroidRow::Category(category.clone())));
+                    }
+                }
+                _ => {}
+            }
+            return Ok(false);
+        }
+        Mode::AndroidEdit { view, app, field, disposition, description, reason } => {
+            match key.code {
+                KeyCode::Esc => state.mode = Mode::Android((**view).clone()),
+                KeyCode::Tab => *field = (*field + 1) % 3,
+                KeyCode::BackTab => *field = (*field + 2) % 3,
+                KeyCode::Left if *field == 0 => *disposition = cycle_disposition(*disposition, false),
+                KeyCode::Right if *field == 0 => *disposition = cycle_disposition(*disposition, true),
+                KeyCode::Char('U') if *field == 0 => *disposition = Some(Disposition::Using),
+                KeyCode::Char('C') if *field == 0 => *disposition = Some(Disposition::Considering),
+                KeyCode::Char('A') if *field == 0 => *disposition = Some(Disposition::Archived),
+                KeyCode::Char('0') if *field == 0 => *disposition = None,
+                KeyCode::Backspace if *field == 1 => { description.pop(); }
+                KeyCode::Backspace if *field == 2 => { reason.pop(); }
+                KeyCode::Char(c) if *field == 1 => description.push(c),
+                KeyCode::Char(c) if *field == 2 => reason.push(c),
+                KeyCode::Enter => {
+                    let index = *app;
+                    save_android_listing(ledger, &view.catalog, index, *disposition, description, reason)?;
+                    let mut returned = (**view).clone();
+                    returned.catalog = AndroidCatalog::from_export(ledger, &returned.catalog.file)?;
+                    returned.detail = None;
+                    returned.focus(index);
+                    state.mode = Mode::Android(returned);
+                    state.message = "Android note saved to TOML.".into();
+                }
+                _ => {}
+            }
+            return Ok(false);
+        }
         Mode::Help => {
             if matches!(key.code, KeyCode::Esc | KeyCode::Char('?' | 'q')) {
                 state.mode = Mode::Browse;
@@ -782,39 +1139,31 @@ fn handle(
                     }
                     return Ok(false);
                 }
-                if !record_only && !saved[2].trim().is_empty() {
-                    state.mode = Mode::Task(Box::new(crate::ui_task::Task::start(
-                        ledger.clone(),
-                        move |ledger, dialog| {
-                            crate::intake::interactive_with(
-                                ledger,
-                                Some(saved[2].trim()),
-                                &saved[1],
-                                Some(&saved),
-                                dialog,
-                            )
-                        },
-                    )));
+                let identity = if saved[2].trim().is_empty() {
+                    saved[0].trim()
                 } else {
-                    let identity = if saved[2].trim().is_empty() {
-                        saved[0].trim()
-                    } else {
-                        saved[2].trim()
+                    saved[2].trim()
+                };
+                if let Ok(index) = ledger.find(identity) {
+                    state.mode = Mode::Detail {
+                        app: index,
+                        scroll: 0,
+                        source_open: false,
+                        record_open: false,
                     };
-                    if let Ok(index) = ledger.find(identity) {
-                        state.mode = Mode::Detail {
-                            app: index,
-                            scroll: 0,
-                            source_open: false,
-                            record_open: false,
-                        };
-                        state.message = "Already tracked; opened existing record. Use a to complete its recipe.".into();
+                    state.message = "Already tracked; opened existing record. Use e to review its source.".into();
+                } else {
+                    ledger.add(&saved[0], &saved[1], &saved[2], &saved[3], &saved[4])?;
+                    let index = ledger.find(identity)?;
+                    state.query = saved[0].trim().into();
+                    state.selection.select(Some(0));
+                    if !record_only && ledger.apps[index].identity.starts_with("https://github.com/") {
+                        state.mode = Mode::Task(Box::new(crate::ui_task::Task::start(
+                            ledger.clone(),
+                            move |ledger, dialog| crate::intake::configure_source(ledger, index, dialog),
+                        )));
                     } else {
-                        ledger.add(&saved[0], &saved[1], &saved[2], &saved[3], &saved[4])?;
-                        state.query = saved[0].trim().into();
-                        state.selection.select(Some(0));
-                        state.message =
-                            "Added to Considering; installation remains unknown.".into();
+                        state.message = "Added to Considering; installation remains unknown. Use e to review its source.".into();
                         state.mode = Mode::Browse;
                     }
                 }
@@ -946,7 +1295,11 @@ fn handle(
             state.query.clear();
             state.mode = Mode::Search;
         }
-        KeyCode::Char('a' | 'A') => {
+        _ if android_key(key) => {
+            state.mode = Mode::Android(AndroidView::new(AndroidCatalog::load(ledger)?));
+            state.message.clear();
+        }
+        KeyCode::Char('a') => {
             let category = match rows.get(selected) {
                 Some(Row::Category(c) | Row::Group(c, _)) => c.clone(),
                 Some(Row::App(i)) => ledger.apps[*i].category.clone(),
@@ -1043,7 +1396,19 @@ fn handle(
                 },
             )));
         }
-        KeyCode::Char('r') => {
+        KeyCode::Char('c' | 'r') if app.is_some() => {
+            let index = app.unwrap();
+            let release_only = key.code == KeyCode::Char('r');
+            state.mode = Mode::Task(Box::new(crate::ui_task::Task::start(
+                ledger.clone(),
+                move |ledger, dialog| if release_only {
+                    crate::intake::release_check(ledger, index, dialog)
+                } else {
+                    crate::intake::configure_source(ledger, index, dialog)
+                },
+            )));
+        }
+        KeyCode::Char('R') => {
             *ledger = Ledger::open(&ledger.path)?;
             state.mode = Mode::Browse;
             state.selection.select(Some(0));
@@ -1109,6 +1474,8 @@ fn event_loop(terminal: &mut DefaultTerminal, ledger: &mut Ledger) -> Result<()>
                     _ => {}
                 },
                 Mode::Search => state.query.push_str(&text),
+                Mode::AndroidEdit { field: 1, description, .. } => description.push_str(&text),
+                Mode::AndroidEdit { field: 2, reason, .. } => reason.push_str(&text),
                 _ => {}
             }
         }
@@ -1128,6 +1495,28 @@ fn event_loop(terminal: &mut DefaultTerminal, ledger: &mut Ledger) -> Result<()>
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn android_view_uses_saved_categories_and_fits_the_quarter_tile() -> Result<()> {
+        let dir = tempfile::tempdir()?;
+        let path = dir.path().join("ledger.toml");
+        std::fs::write(&path, "schema_version = 1\n[[inbox.android]]\nidentity = 'android:one.app'\nname = 'Old name'\ndisplay_name = 'New name'\ndisplay_categories = '[\"Tools\",\"Daily\"]'\ndisposition = 'using'\ndescription = 'My note'\n")?;
+        let export = dir.path().join("obtainx-export-test.json");
+        std::fs::write(&export, r#"{"apps":[{"id":"one.app","name":"New name","categories":["Tools","Daily"]},{"id":"two.app","name":"Second","categories":["Tools"]}]}"#)?;
+        let ledger = Ledger::open(&path)?;
+        let mut state = State::default();
+        let mut view = AndroidView::new(AndroidCatalog::from_export(&ledger, &export)?);
+        view.expanded.insert("Tools".into());
+        state.mode = Mode::Android(view);
+        let list = render(&ledger, &mut state, 87, 22)?.join("\n");
+        assert!(list.contains("Android Track · 2 apps"), "{list}");
+        assert!(list.contains("New name"), "{list}");
+        assert!(list.contains("Second"), "{list}");
+        assert!(!list.contains("Resize to continue"), "{list}");
+        assert!(android_key(KeyEvent::new(KeyCode::Char('A'), KeyModifiers::SHIFT)));
+        assert!(!android_key(KeyEvent::new(KeyCode::Char('a'), KeyModifiers::NONE)));
+        Ok(())
+    }
 
     #[test]
     fn presence_markers_are_two_cells_at_a_fixed_name_edge() {
@@ -1300,8 +1689,8 @@ mod tests {
         let mut state = State::default();
         state.mode = Mode::Help;
         let text = render(&ledger, &mut state, 87, 22)?.join("\n");
-        assert!(text.contains("Direct Go: out of scope · Nix: landed"), "{text}");
-        assert!(text.contains("m          Nix migrate (confirmed)"), "{text}");
+        assert!(text.contains("c          Check all source routes"), "{text}");
+        assert!(text.contains("r          Check release artifacts"), "{text}");
         assert!(!text.contains("Resize to continue"), "{text}");
         Ok(())
     }

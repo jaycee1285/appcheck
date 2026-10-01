@@ -55,6 +55,22 @@ pub struct App {
     pub nix_migration: Option<NixMigration>,
 }
 
+#[derive(Clone, Debug)]
+pub struct AndroidRecord {
+    pub identity: String,
+    pub name: String,
+    pub categories: Vec<String>,
+    pub has_category_snapshot: bool,
+    pub disposition: Option<Disposition>,
+    pub description: String,
+    pub archived_because: String,
+    pub author: String,
+    pub installed_version: String,
+    pub latest_version: String,
+    pub imported_from: String,
+    pub observed_on: String,
+}
+
 #[derive(Clone, Debug, Default, Deserialize)]
 pub struct NixMigration {
     #[serde(default)]
@@ -218,6 +234,92 @@ fn parse(text: &str) -> Result<(DocumentMut, Vec<App>)> {
 }
 
 impl Ledger {
+    pub fn android_records(&self) -> Result<Vec<AndroidRecord>> {
+        let Some(tables) = self.doc.get("inbox")
+            .and_then(|inbox| inbox.get("android"))
+            .and_then(Item::as_array_of_tables) else { return Ok(Vec::new()); };
+        let mut records = Vec::with_capacity(tables.len());
+        let mut identities = HashSet::new();
+        for table in tables {
+            let identity = table.get("identity").and_then(Item::as_str)
+                .context("Android inbox row has no identity")?;
+            ensure!(identity.starts_with("android:") && identity.len() > "android:".len(),
+                "Android inbox identity must start with android:<package id>");
+            ensure!(identities.insert(identity.to_string()), "Duplicate Android inbox identity: {identity}");
+            let get = |key| table.get(key).and_then(Item::as_str).unwrap_or_default().to_string();
+            let disposition = match table.get("disposition").and_then(Item::as_str) {
+                Some("using") => Some(Disposition::Using),
+                Some("considering") => Some(Disposition::Considering),
+                Some("archived") => Some(Disposition::Archived),
+                None => None,
+                Some(other) => bail!("Android {identity} has unknown disposition {other:?}"),
+            };
+            let category_json = table.get("display_categories").and_then(Item::as_str);
+            let categories = match category_json {
+                Some(json) => serde_json::from_str(json)
+                    .with_context(|| format!("Android {identity} has invalid category snapshot"))?,
+                None => Vec::new(),
+            };
+            let name = table.get("display_name").and_then(Item::as_str)
+                .or_else(|| table.get("name").and_then(Item::as_str))
+                .unwrap_or(identity.trim_start_matches("android:")).to_string();
+            records.push(AndroidRecord {
+                identity: identity.into(), name, categories, has_category_snapshot: category_json.is_some(), disposition,
+                description: get("description"), archived_because: get("archived_because"),
+                author: get("display_author"), installed_version: get("display_installed_version"),
+                latest_version: get("display_latest_version"), imported_from: get("imported_from"),
+                observed_on: get("observed_on"),
+            });
+        }
+        Ok(records)
+    }
+
+    pub fn edit_android(&mut self, index: usize, disposition: Option<Disposition>, description: &str, reason: &str) -> Result<()> {
+        let mut doc = self.document();
+        let table = doc.get_mut("inbox").and_then(|inbox| inbox.get_mut("android"))
+            .and_then(Item::as_array_of_tables_mut)
+            .and_then(|tables| tables.get_mut(index))
+            .context("Android inbox row no longer exists")?;
+        match disposition {
+            Some(value) => set_text(table, "disposition", value.label()),
+            None => { table.remove("disposition"); }
+        }
+        set_text(table, "description", description.trim());
+        if !reason.trim().is_empty() || disposition == Some(Disposition::Archived) {
+            set_text(table, "archived_because", reason.trim());
+        } else {
+            table.remove("archived_because");
+        }
+        self.save(doc)
+    }
+
+    pub fn add_android(&mut self, record: &AndroidRecord) -> Result<()> {
+        ensure!(record.identity.starts_with("android:") && !record.name.trim().is_empty(), "Android note needs package identity and name");
+        ensure!(!self.android_records()?.iter().any(|row| row.identity == record.identity), "Android note already exists: {}", record.identity);
+        let mut doc = self.document();
+        if doc.get("inbox").is_none() { doc["inbox"] = Item::Table(Table::new()); }
+        if doc["inbox"].get("android").is_none() {
+            doc["inbox"]["android"] = Item::ArrayOfTables(toml_edit::ArrayOfTables::new());
+        }
+        let rows = doc["inbox"]["android"].as_array_of_tables_mut()
+            .context("Android inbox must be [[inbox.android]] tables")?;
+        let mut table = Table::new();
+        table["identity"] = value(&record.identity);
+        table["name"] = value(&record.name);
+        table["description"] = value(&record.description);
+        if let Some(disposition) = record.disposition { table["disposition"] = value(disposition.label()); }
+        if !record.archived_because.is_empty() { table["archived_because"] = value(&record.archived_because); }
+        table["imported_from"] = value(&record.imported_from);
+        table["observed_on"] = value(&record.observed_on);
+        table["display_name"] = value(&record.name);
+        table["display_author"] = value(&record.author);
+        table["display_categories"] = value(serde_json::to_string(&record.categories)?);
+        table["display_installed_version"] = value(&record.installed_version);
+        table["display_latest_version"] = value(&record.latest_version);
+        rows.push(table);
+        self.save(doc)
+    }
+
     pub fn open(path: &Path) -> Result<Self> {
         let path = fs::canonicalize(path).with_context(|| {
             format!(
@@ -500,6 +602,14 @@ impl Ledger {
     }
 
     pub(crate) fn register_recipe(&mut self, app: &App) -> Result<usize> {
+        self.write_recipe(app, false)
+    }
+
+    pub(crate) fn replace_recipe(&mut self, app: &App) -> Result<usize> {
+        self.write_recipe(app, true)
+    }
+
+    fn write_recipe(&mut self, app: &App, replace: bool) -> Result<usize> {
         let existing = self
             .apps
             .iter()
@@ -525,10 +635,7 @@ impl Ledger {
             })
             .context("New record not found")?;
         let table = tables.get_mut(index).unwrap();
-        ensure!(
-            table.get("recipe").is_none(),
-            "Already configured; existing recipe was not changed"
-        );
+        ensure!(replace || table.get("recipe").is_none(), "Already configured; existing recipe was not changed");
         let recipe = app.recipe.as_ref().context("Missing recipe")?;
         let recipe_doc: DocumentMut = toml::to_string(recipe)?.parse()?;
         table["recipe"] = Item::Table(recipe_doc.as_table().clone());
@@ -587,6 +694,30 @@ mod tests {
     use super::*;
 
     #[test]
+    fn rerouting_recipe_preserves_record_and_launch() -> Result<()> {
+        let dir = tempfile::tempdir()?;
+        let path = dir.path().join("ledger.toml");
+        fs::write(&path, "schema_version = 1\n")?;
+        let mut ledger = Ledger::open(&path)?;
+        ledger.add("Tool", "Utilities", "https://github.com/o/tool", "from phone", "cli")?;
+        let mut app = ledger.apps[0].clone();
+        app.recipe = Some(crate::update::Recipe { source: "github".into(), repo: "o/tool".into(),
+            asset: "tool-linux.tar.gz".into(), installer: "tar.gz".into(),
+            destination: "/tmp/bin/tool".into(), os: "linux".into(), arch: "x86_64".into(),
+            member: Some("tool".into()), ..Default::default() });
+        app.launch = Some(Launch { program: "/tmp/bin/tool".into(), args: vec![], gui: false });
+        ledger.register_recipe(&app)?;
+        app.recipe.as_mut().unwrap().asset = "tool-linux-musl.tar.gz".into();
+        ledger.replace_recipe(&app)?;
+        let saved = Ledger::open(&path)?;
+        assert_eq!(saved.apps[0].description, "from phone");
+        assert_eq!(saved.apps[0].tags, ["cli"]);
+        assert_eq!(saved.apps[0].recipe.as_ref().unwrap().asset, "tool-linux-musl.tar.gz");
+        assert_eq!(saved.apps[0].launch.as_ref().unwrap().program, "/tmp/bin/tool");
+        Ok(())
+    }
+
+    #[test]
     fn failure_history_keeps_the_last_two_strikes_of_either_kind() -> Result<()> {
         let dir = tempfile::tempdir()?;
         let path = dir.path().join("ledger.toml");
@@ -637,6 +768,33 @@ mod tests {
         Ok(())
     }
     const FIXTURE: &str = "schema_version = 1\n\n[[inbox.nix]]\nnote = 'an incomplete Nix thought'\n\n[[inbox.appimage]]\nname = 'rough AppImage note'\n\n# Keep this human note\n[[apps]]\nidentity = 'name:foo'\nname = 'foo'\ncategory = 'Editing'\ndisposition = 'considering' # Keep inline note too\nfuture_field = 'retain me'\n";
+
+    #[test]
+    fn android_snapshot_and_note_edit_preserve_other_rows_and_fields() -> Result<()> {
+        let dir = tempfile::tempdir()?;
+        let path = dir.path().join("ledger.toml");
+        let original = format!("{FIXTURE}\n[[inbox.android]]\nidentity = 'android:one.app'\nname = 'Old name'\ndisplay_name = 'New name'\ndisplay_categories = '[\"Tools\",\"Daily\"]'\ndisposition = 'considering'\ndescription = 'first note'\nfuture_field = 'retain this'\n\n# Neighbor\n[[inbox.android]]\nidentity = 'android:two.app'\nname = 'Second'\n");
+        fs::write(&path, &original)?;
+        let mut ledger = Ledger::open(&path)?;
+        let records = ledger.android_records()?;
+        assert_eq!(records.len(), 2);
+        assert_eq!(records[0].name, "New name");
+        assert_eq!(records[0].categories, ["Tools", "Daily"]);
+        assert!(records[0].has_category_snapshot);
+        assert!(!records[1].has_category_snapshot);
+        assert_eq!(records[1].disposition, None);
+        ledger.edit_android(0, Some(Disposition::Archived), "updated", "too many permissions")?;
+        let saved = fs::read_to_string(&path)?;
+        assert!(saved.contains("future_field = 'retain this'"));
+        assert!(saved.contains("# Neighbor\n[[inbox.android]]\nidentity = 'android:two.app'\nname = 'Second'"));
+        assert_eq!(ledger.apps[0].name, "foo");
+        let reopened = Ledger::open(&path)?;
+        assert_eq!(reopened.android_records()?[0].archived_because, "too many permissions");
+        assert_eq!(reopened.android_records()?[0].disposition, Some(Disposition::Archived));
+        fs::write(&path, format!("{saved}\n# synced change\n"))?;
+        assert!(ledger.edit_android(0, Some(Disposition::Using), "updated", "").is_err());
+        Ok(())
+    }
 
     #[test]
     fn editing_imported_source_preserves_evidence_and_refuses_managed_identity_change() -> Result<()> {

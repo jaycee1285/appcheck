@@ -27,6 +27,32 @@ class ObtainiumTest {
     }
 
     @Test
+    fun newestPrefersObtainxAndExtractsItsDate() {
+        val obtainx = "obtainx-export-2026-09-28T14-31-47.675840.json"
+        assertEquals(
+            obtainx,
+            Obtainium.newest(listOf(
+                "obtainium-export-2026-09-28T18-12-36.836929-auto.json",
+                "obtainx-export-2026-09-20T20-26-55.248005.json",
+                obtainx,
+                "$obtainx.tmp",
+            )),
+        )
+        assertEquals("2026-09-28", Obtainium.observedOn(obtainx))
+        assertEquals("2026-09-28", Obtainium.observedOn("obtainium-export-2026-09-28T18-12-36.836929-auto.json"))
+    }
+
+    @Test
+    fun obtainxExportParsesToThePhoneProjection() {
+        val file = File(root, "obtainx-export-2026-09-28T14-31-47.675840.json")
+        assumeTrue("no synced ObtainX export on this machine", file.isFile)
+        val export = Obtainium.parse(file.readText(), file.name, file.length())
+        assertEquals(104, export.apps.size)
+        assertEquals(49, export.installed)
+        assertEquals(14, export.assignable.size)
+    }
+
+    @Test
     fun liveExportParsesToThePhoneProjection() {
         val file = File(root, "obtainium-export-2026-09-20T20-26-55.248005.json")
         assumeTrue("no synced export on this machine", file.isFile)

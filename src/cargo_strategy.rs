@@ -21,6 +21,8 @@ pub struct Plan {
     pub identity: String,
     pub package: String,
     pub registry: String,
+    pub repo: String,
+    pub local_path: Option<String>,
     pub root_text: String,
     pub root: PathBuf,
     pub bins: Vec<String>,
@@ -50,7 +52,7 @@ pub struct RemovalPlan {
 impl RemovalPlan {
     pub fn summary(&self) -> String {
         format!(
-            "Remove managed Cargo package?\n\n{} {}\nregistry {} · package {}\nroot {}\n{}\n\nCargo's package receipt and every managed command hash must still match. The archive decision and reason are already saved; keeping the package is the default.",
+            "Remove managed Cargo package?\n\n{} {}\nsource {} · package {}\nroot {}\n{}\n\nCargo's package receipt and every managed command hash must still match. The archive decision and reason are already saved; keeping the package is the default.",
             self.name,
             self.version,
             self.registry,
@@ -112,10 +114,17 @@ fn recipe(app: &App) -> Result<(&Recipe, &str, &str, &str, &[String])> {
     let root = recipe.root.as_deref().context("Cargo recipe requires root")?;
     exact_name(package, "package")?;
     exact_name(registry, "registry")?;
-    ensure!(
-        registry == "crates-io",
-        "Only the exact crates-io Cargo registry identity is supported"
-    );
+    ensure!(matches!(registry, "crates-io" | "git" | "path"), "Unsupported Cargo install source");
+    if registry == "git" {
+        ensure!(app.identity == format!("https://github.com/{}", recipe.repo), "Cargo Git source must match the app identity");
+        ensure!(recipe.repo.split('/').count() == 2 && recipe.repo.split('/').all(crate::update::safe_name), "Cargo Git repository is not exact");
+    }
+    if registry == "path" {
+        let path = recipe.remote.as_deref().context("Local Cargo recipe requires checkout path")?;
+        let checkout = expand_path(path);
+        ensure!(checkout.is_absolute() && checkout.starts_with(expand_path("~/repos/dz")) && checkout.join("Cargo.toml").is_file(), "Local Cargo checkout must be under ~/repos/dz and have Cargo.toml");
+        ensure!(recipe.repo.split('/').count() == 2 && recipe.repo.split('/').all(crate::update::safe_name), "Local Cargo recipe needs the exact GitHub repository");
+    }
     ensure!(!recipe.bins.is_empty(), "Cargo recipe requires at least one exact bin");
     let mut unique = HashSet::new();
     for bin in &recipe.bins {
@@ -223,6 +232,67 @@ fn installed(root: &Path, package: &str) -> Result<Option<(String, Vec<String>)>
     }
 }
 
+fn source_revision(recipe: &Recipe, cancel: &AtomicBool) -> Result<String> {
+    let source = recipe.registry.as_deref().context("Missing Cargo source")?;
+    let revision = if source == "git" {
+        output(Command::new("gh").args(["api", &format!("repos/{}/commits/HEAD", recipe.repo), "--jq", ".sha"])
+            .env("GH_PROMPT_DISABLED", "1"), cancel, "GitHub commit lookup")?
+    } else {
+        let path = recipe.remote.as_deref().context("Missing local checkout")?;
+        let root = output(Command::new("git").args(["-C", path, "rev-parse", "--show-toplevel"]), cancel, "checkout root")?;
+        let root = root.trim();
+        ensure!(Path::new(root).starts_with(expand_path("~/repos/dz")), "Local Cargo checkout moved outside ~/repos/dz");
+        let origin = output(Command::new("git").args(["-C", root, "remote", "get-url", "origin"]), cancel, "checkout origin")?;
+        let origin = origin.trim().replace("git@github.com:", "https://github.com/");
+        ensure!(crate::ledger::normalize_identity(&origin) == crate::ledger::normalize_identity(&format!("https://github.com/{}", recipe.repo)),
+            "Local checkout origin changed since Cargo review");
+        let dirty = output(Command::new("git").args(["-C", root, "status", "--porcelain"]), cancel, "checkout status")?;
+        ensure!(dirty.trim().is_empty(), "Local checkout has uncommitted changes; commit before an exact Cargo install");
+        output(Command::new("git").args(["-C", path, "rev-parse", "HEAD"]), cancel, "checkout revision")?
+    };
+    let revision = revision.trim().to_ascii_lowercase();
+    ensure!(revision.len() == 40 && revision.bytes().all(|b| b.is_ascii_hexdigit()), "Cargo source revision is not a full Git SHA");
+    Ok(revision)
+}
+
+fn source_receipt(root: &Path, recipe: &Recipe, release: &str) -> Result<Option<(String, Vec<String>)>> {
+    let contents = match fs::read_to_string(root.join(".crates2.json")) {
+        Ok(value) => value,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(error) => return Err(error).context("Cannot read Cargo receipt"),
+    };
+    let data: serde_json::Value = serde_json::from_str(&contents)?;
+    let installs = data.get("installs").and_then(serde_json::Value::as_object).context("Cargo receipt has no installs")?;
+    let package = recipe.package.as_deref().context("Missing Cargo package")?;
+    let prefix = format!("{package} ");
+    let route = recipe.registry.as_deref().unwrap_or_default();
+    let matches: Vec<_> = installs.iter().filter(|(key, _)| key.starts_with(&prefix)).filter(|(key, _)| {
+        if route == "git" { key.contains(&format!("(git+https://github.com/{}", recipe.repo)) }
+        else { recipe.remote.as_ref().is_some_and(|path| key.contains(&format!("(path+file://{}", expand_path(path).display()))) }
+    }).collect();
+    ensure!(matches.len() <= 1, "Cargo receipt has multiple identities for {package}");
+    let Some((identity, entry)) = matches.first() else { return Ok(None); };
+    let version = if route == "git" {
+        let hash = identity.rsplit_once('#').and_then(|(_, rest)| rest.strip_suffix(')')).context("Cargo Git receipt has no commit")?;
+        if release.starts_with(hash) { release.to_string() } else { hash.to_string() }
+    } else { release.to_string() };
+    let bins = entry.get("bins").and_then(serde_json::Value::as_array).context("Cargo receipt has no bin list")?
+        .iter().map(|bin| bin.as_str().map(str::to_owned).context("Cargo receipt contains a non-string bin"))
+        .collect::<Result<Vec<_>>>()?;
+    Ok(Some((version, bins)))
+}
+
+fn package_receipt_count(root: &Path, package: &str) -> Result<usize> {
+    let contents = match fs::read_to_string(root.join(".crates2.json")) {
+        Ok(value) => value,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(0),
+        Err(error) => return Err(error).context("Cannot read Cargo receipt"),
+    };
+    let data: serde_json::Value = serde_json::from_str(&contents)?;
+    let installs = data.get("installs").and_then(serde_json::Value::as_object).context("Cargo receipt has no installs")?;
+    Ok(installs.keys().filter(|identity| identity.starts_with(&format!("{package} "))).count())
+}
+
 pub fn check(ledger: &Ledger, index: usize, cancel: &AtomicBool) -> Result<Plan> {
     ledger.check_unchanged()?;
     let app = &ledger.apps[index];
@@ -230,10 +300,14 @@ pub fn check(ledger: &Ledger, index: usize, cancel: &AtomicBool) -> Result<Plan>
         app.disposition != crate::ledger::Disposition::Archived,
         "Archived applications are excluded from updates; move it to Considering first"
     );
-    let (_recipe, package, registry, root_text, _bins) = recipe(app)?;
+    let (source, package, registry, root_text, _bins) = recipe(app)?;
     let root = root_path(root_text)?;
-    let release = latest(package, registry, cancel)?;
-    let installed = installed(&root, package)?;
+    let release = if registry == "crates-io" { latest(package, registry, cancel)? }
+        else if app.provenance.managed_by_apptrack && app.provenance.source == "cargo"
+            && app.provenance.registry.as_deref() == Some(registry) { source_revision(source, cancel)? }
+        else { match &source.branch { Some(pinned) => pinned.clone(), None => source_revision(source, cancel)? } };
+    let installed = if registry == "crates-io" { installed(&root, package)? }
+        else { source_receipt(&root, source, &release)? };
     let plan = make_plan(app, index, release, installed)?;
     ledger.check_unchanged()?;
     Ok(plan)
@@ -245,7 +319,7 @@ pub(crate) fn make_plan(
     release: String,
     installed: Option<(String, Vec<String>)>,
 ) -> Result<Plan> {
-    let (_recipe, package, registry, root_text, bins) = recipe(app)?;
+    let (source, package, registry, root_text, bins) = recipe(app)?;
     let root = root_path(root_text)?;
     let targets: Vec<_> = bins.iter().map(|bin| root.join("bin").join(bin)).collect();
     let previous_hashes = targets
@@ -279,6 +353,8 @@ pub(crate) fn make_plan(
         identity: app.identity.clone(),
         package: package.into(),
         registry: registry.into(),
+        repo: source.repo.clone(),
+        local_path: source.remote.clone(),
         root_text: root_text.into(),
         root,
         bins: bins.into(),
@@ -294,7 +370,7 @@ pub(crate) fn make_plan(
 impl Plan {
     pub fn summary(&self) -> String {
         format!(
-            "{}\n{} → {}\n\nSource\nCargo registry {} · package {}\n\nInstall\n{}\n\nVerification\nCargo's installed-package receipt, exact bin set, and SHA-256 for each managed binary.\n\n{}",
+            "{}\n{} → {}\n\nSource\nCargo {} · package {}\n\nInstall\n{}\n\nVerification\nCargo's installed-package receipt, exact bin set, and SHA-256 for each managed binary.\n\n{}",
             self.name,
             self.old_version.as_deref().or(self.installed_version.as_deref()).unwrap_or("unknown"),
             self.release,
@@ -364,7 +440,7 @@ pub fn removal_plan(ledger: &Ledger, index: usize) -> Result<Option<RemovalPlan>
     let version = app.provenance.release.as_deref().context("Managed Cargo receipt has no version")?;
     exact_name(package, "package")?;
     exact_name(registry, "registry")?;
-    ensure!(registry == "crates-io", "Only an exact crates-io receipt grants Cargo removal authority");
+    ensure!(matches!(registry, "crates-io" | "git" | "path"), "Unsupported Cargo removal source");
     let root = root_path(root_text)?;
     ensure!(!app.provenance.bin_sha256.is_empty(), "Managed Cargo receipt has no command hashes");
     let bins: Vec<_> = app.provenance.bin_sha256.keys().cloned().collect();
@@ -376,7 +452,14 @@ pub fn removal_plan(ledger: &Ledger, index: usize) -> Result<Option<RemovalPlan>
     let target_paths: HashSet<_> = targets.iter().cloned().collect();
     ensure!(receipt_paths == target_paths, "Cargo provenance paths do not match its exact command set");
     ensure!(targets.iter().all(|target| app.installed_paths.iter().any(|path| expand_path(path) == *target)), "A managed Cargo command is absent from the application's installed paths");
-    let (installed_version, mut installed_bins) = installed(&root, package)?
+    ensure!(package_receipt_count(&root, package)? == 1, "Cargo has multiple or no receipts for this package; removal needs one exact identity");
+    let source = Recipe { source: "cargo".into(), installer: "cargo-install".into(),
+        package: Some(package.into()), registry: Some(registry.into()),
+        repo: app.provenance.repo.clone().unwrap_or_default(), remote: app.provenance.remote.clone(),
+        ..Recipe::default() };
+    let receipt = if registry == "crates-io" { installed(&root, package)? }
+        else { source_receipt(&root, &source, version)? };
+    let (installed_version, mut installed_bins) = receipt
         .context("Cargo's package receipt no longer contains the managed package")?;
     ensure!(installed_version == version, "Cargo's installed version changed since the AppTrack receipt");
     installed_bins.sort();
@@ -459,7 +542,7 @@ pub fn remove(
         .context("Cannot run cargo uninstall")?;
         ensure!(output.status.success(), "cargo uninstall failed: {}", String::from_utf8_lossy(&output.stderr).trim());
         progress("Verifying Cargo's receipt and managed commands are absent…");
-        ensure!(installed(&plan.root, &plan.package)?.is_none(), "Cargo receipt still contains the removed package");
+        ensure!(package_receipt_count(&plan.root, &plan.package)? == 0, "Cargo receipt still contains the removed package");
         for target in &plan.targets {
             ensure!(current_hash(target)?.is_none(), "Cargo command remains after uninstall: {}", target.display());
         }
@@ -483,33 +566,63 @@ pub fn apply(
     cancel: &AtomicBool,
     progress: impl Fn(&str),
 ) -> Result<()> {
+    let report = &progress;
     apply_with(
         ledger,
         plan,
         cancel,
-        progress,
-        |plan, cancel| install_exact(plan, cancel),
-        |plan, _| installed(&plan.root, &plan.package),
+        report,
+        |plan, cancel| install_exact(plan, cancel, report),
+        |plan, _| {
+            if plan.registry == "crates-io" { installed(&plan.root, &plan.package) }
+            else {
+                let recipe = Recipe { source: "cargo".into(), installer: "cargo-install".into(),
+                    package: Some(plan.package.clone()), registry: Some(plan.registry.clone()),
+                    repo: plan.repo.clone(), remote: plan.local_path.clone(), ..Recipe::default() };
+                source_receipt(&plan.root, &recipe, &plan.release)
+            }
+        },
     )
 }
 
-fn install_exact(plan: &Plan, cancel: &AtomicBool) -> Result<()> {
+fn install_exact(plan: &Plan, cancel: &AtomicBool, progress: &dyn Fn(&str)) -> Result<()> {
+    if plan.registry == "path" {
+        let source = Recipe { registry: Some("path".into()), repo: plan.repo.clone(),
+            remote: plan.local_path.clone(), ..Recipe::default() };
+        ensure!(source_revision(&source, cancel)? == plan.release, "Local checkout changed since planning");
+    }
     let version = format!("={}", plan.release);
     let mut command = Command::new("cargo");
-    command
-        .args(["install", &plan.package, "--version", &version, "--registry", &plan.registry, "--root"])
-        .arg(&plan.root)
-        .args(["--force", "--color", "never"]);
+    command.arg("install");
+    match plan.registry.as_str() {
+        "crates-io" => { command.args([&plan.package, "--version", &version, "--registry", &plan.registry]); }
+        "git" => { command.args(["--git", &format!("https://github.com/{}", plan.repo), "--rev", &plan.release, &plan.package]); }
+        "path" => { command.args(["--path", plan.local_path.as_deref().context("Missing checkout path")?]); }
+        _ => bail!("Unsupported Cargo source"),
+    }
+    command.arg("--root").arg(&plan.root).args(["--force", "--color", "never"]);
     for bin in &plan.bins {
         command.args(["--bin", bin]);
     }
-    let result = crate::work::output_long_running(&mut command, true, Some(cancel))
+    let result = crate::work::output_long_running_progress(&mut command, true, Some(cancel), &|line| {
+        let line = line.trim();
+        if ["Updating ", "Downloading ", "Downloaded ", "Compiling ", "Installing ", "Installed ", "Finished ", "error:"]
+            .iter().any(|prefix| line.starts_with(prefix)) {
+            let short: String = line.chars().take(140).collect();
+            progress(&format!("Cargo · {short}"));
+        }
+    })
         .context("Cannot run cargo install")?;
     ensure!(
         result.status.success(),
         "cargo install failed: {}",
         String::from_utf8_lossy(&result.stderr).trim()
     );
+    if plan.registry == "path" {
+        let source = Recipe { registry: Some("path".into()), repo: plan.repo.clone(),
+            remote: plan.local_path.clone(), ..Recipe::default() };
+        ensure!(source_revision(&source, cancel)? == plan.release, "Local checkout changed during Cargo install");
+    }
     Ok(())
 }
 
@@ -532,7 +645,9 @@ fn apply_with(
         package == plan.package
             && registry == plan.registry
             && root_text == plan.root_text
-            && bins == plan.bins,
+            && bins == plan.bins
+            && _recipe.repo == plan.repo
+            && _recipe.remote == plan.local_path,
         "Cargo recipe changed since planning"
     );
     ensure!(root_path(root_text)? == plan.root, "Cargo root changed since planning");
@@ -582,12 +697,20 @@ fn receipt_document(ledger: &Ledger, plan: &Plan, hashes: &BTreeMap<String, Stri
     let app = doc["apps"].as_array_of_tables_mut().unwrap().get_mut(plan.index).unwrap();
     let previous = &ledger.apps[plan.index];
     if let Some(launch) = &previous.launch {
-        if previous.installed_paths.iter().any(|path| expand_path(path) == expand_path(&launch.program))
+        let launch_is_managed_command = previous.installed_paths.iter().any(|path| expand_path(path) == expand_path(&launch.program))
+            || previous.recipe.as_ref().is_some_and(|recipe| !recipe.destination.is_empty()
+                && expand_path(&recipe.destination) == expand_path(&launch.program))
+            || previous.recipe.as_ref().and_then(|recipe| recipe.launch_from.as_ref())
+                .is_some_and(|from| expand_path(from) == expand_path(&launch.program));
+        if launch_is_managed_command
             && plan.targets.len() == 1
             && expand_path(&launch.program) != plan.targets[0]
         {
             app["launch"]["program"] = value(plan.targets[0].to_string_lossy().as_ref());
         }
+    }
+    if let Some(recipe) = app.get_mut("recipe").and_then(Item::as_table_mut) {
+        recipe.remove("launch_from");
     }
     if let Some(old) = app.get("provenance").and_then(Item::as_table) {
         let mut old = old.clone();
@@ -607,6 +730,12 @@ fn receipt_document(ledger: &Ledger, plan: &Plan, hashes: &BTreeMap<String, Stri
     provenance["installer"] = value("cargo-install");
     provenance["package"] = value(&plan.package);
     provenance["registry"] = value(&plan.registry);
+    if plan.registry == "git" || plan.registry == "path" {
+        provenance["repo"] = value(&plan.repo);
+        provenance["commit"] = value(&plan.release);
+        if let Some(path) = &plan.local_path { provenance["remote"] = value(path); }
+        app["recipe"]["branch"] = value(&plan.release);
+    }
     provenance["root"] = value(&plan.root_text);
     provenance["release"] = value(&plan.release);
     provenance["managed_by_apptrack"] = value(true);
@@ -642,6 +771,22 @@ fn receipt_document(ledger: &Ledger, plan: &Plan, hashes: &BTreeMap<String, Stri
 mod tests {
     use super::*;
     use std::cell::Cell;
+
+    #[test]
+    fn git_and_checkout_receipts_bind_to_the_selected_source() -> Result<()> {
+        let root = tempfile::tempdir()?;
+        let sha = "0123456789abcdef0123456789abcdef01234567";
+        fs::write(root.path().join(".crates2.json"), format!(r#"{{"installs":{{"tool 1.0.0 (git+https://github.com/owner/tool?rev={sha}#{sha})":{{"bins":["tool"]}},"tool 1.0.0 (path+file:///tmp/other)":{{"bins":["other"]}}}}}}"#))?;
+        let git = Recipe { package: Some("tool".into()), registry: Some("git".into()), repo: "owner/tool".into(), ..Recipe::default() };
+        assert_eq!(source_receipt(root.path(), &git, sha)?, Some((sha.into(), vec!["tool".into()])));
+        let wrong = Recipe { repo: "elsewhere/tool".into(), ..git };
+        assert_eq!(source_receipt(root.path(), &wrong, sha)?, None);
+        let local = Recipe { package: Some("tool".into()), registry: Some("path".into()),
+            remote: Some("/tmp/other".into()), ..Recipe::default() };
+        assert_eq!(source_receipt(root.path(), &local, sha)?, Some((sha.into(), vec!["other".into()])));
+        assert_eq!(package_receipt_count(root.path(), "tool")?, 2);
+        Ok(())
+    }
 
     #[test]
     fn cargo_output_parsers_require_exact_package_registry_and_version() -> Result<()> {
@@ -811,6 +956,29 @@ bins = ["tool"]
         let receipt = receipt_document(&ledger, &plan, &hashes)?;
         assert_eq!(receipt["apps"][0]["launch"]["program"].as_str(), Some(plan.targets[0].to_str().unwrap()));
         assert_eq!(ledger.apps[0].launch.as_ref().unwrap().program, old.to_string_lossy());
+        Ok(())
+    }
+
+    #[test]
+    fn saved_cargo_reroute_moves_old_recipe_launch_but_preserves_custom_wrapper() -> Result<()> {
+        let (dir, ledger, _) = fixture()?;
+        let old = dir.path().join("old-bin/tool");
+        let path = ledger.path.clone();
+        let text = fs::read_to_string(&path)?
+            .replace("bins = [\"tool\"]", &format!("bins = [\"tool\"]\nlaunch_from = {old:?}"));
+        fs::write(&path, format!("{text}\n[apps.launch]\nprogram = {old:?}\nargs = []\ngui = false\n"))?;
+        let ledger = Ledger::open(&path)?;
+        let plan = make_plan(&ledger.apps[0], 0, "2.0.0".into(), None)?;
+        let receipt = receipt_document(&ledger, &plan, &BTreeMap::new())?;
+        assert_eq!(receipt["apps"][0]["launch"]["program"].as_str(), plan.targets[0].to_str());
+        assert!(receipt["apps"][0]["recipe"].get("launch_from").is_none());
+        let custom = fs::read_to_string(&path)?
+            .replace(&format!("program = {old:?}"), "program = \"/tmp/custom-wrapper\"");
+        fs::write(&path, custom)?;
+        let ledger = Ledger::open(&path)?;
+        let plan = make_plan(&ledger.apps[0], 0, "2.0.0".into(), None)?;
+        let receipt = receipt_document(&ledger, &plan, &BTreeMap::new())?;
+        assert_eq!(receipt["apps"][0]["launch"]["program"].as_str(), Some("/tmp/custom-wrapper"));
         Ok(())
     }
 

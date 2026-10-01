@@ -15,6 +15,7 @@ pub fn output(
         capture_stdout,
         cancel,
         Some(std::time::Duration::from_secs(120)),
+        None,
     )
 }
 
@@ -25,7 +26,18 @@ pub fn output_long_running(
     capture_stdout: bool,
     cancel: Option<&AtomicBool>,
 ) -> anyhow::Result<std::process::Output> {
-    output_with_timeout(command, capture_stdout, cancel, None)
+    output_with_timeout(command, capture_stdout, cancel, None, None)
+}
+
+/// Report complete stderr lines while a long-running process is active.
+/// The full output is still returned for exact failure reporting.
+pub fn output_long_running_progress(
+    command: &mut std::process::Command,
+    capture_stdout: bool,
+    cancel: Option<&AtomicBool>,
+    on_stderr: &dyn Fn(&str),
+) -> anyhow::Result<std::process::Output> {
+    output_with_timeout(command, capture_stdout, cancel, None, Some(on_stderr))
 }
 
 fn output_with_timeout(
@@ -33,6 +45,7 @@ fn output_with_timeout(
     capture_stdout: bool,
     cancel: Option<&AtomicBool>,
     timeout: Option<std::time::Duration>,
+    on_stderr: Option<&dyn Fn(&str)>,
 ) -> anyhow::Result<std::process::Output> {
     use std::{
         io::Read,
@@ -53,14 +66,43 @@ fn output_with_timeout(
             pipe.read_to_end(&mut bytes).map(|_| bytes)
         })
     });
+    let (progress_tx, progress_rx) = mpsc::channel();
+    let track_progress = on_stderr.is_some();
     let stderr = child.stderr.take().map(|mut pipe| {
         std::thread::spawn(move || {
             let mut bytes = Vec::new();
-            pipe.read_to_end(&mut bytes).map(|_| bytes)
+            let mut pending = Vec::new();
+            let mut chunk = [0u8; 4096];
+            loop {
+                let count = pipe.read(&mut chunk)?;
+                if count == 0 { break; }
+                bytes.extend_from_slice(&chunk[..count]);
+                if track_progress {
+                    for byte in &chunk[..count] {
+                        if *byte == b'\n' || *byte == b'\r' {
+                            if !pending.is_empty() {
+                                let line = String::from_utf8_lossy(&pending).trim().to_string();
+                                if !line.is_empty() { let _ = progress_tx.send(line); }
+                                pending.clear();
+                            }
+                        } else if pending.len() < 4096 {
+                            pending.push(*byte);
+                        }
+                    }
+                }
+            }
+            if track_progress && !pending.is_empty() {
+                let line = String::from_utf8_lossy(&pending).trim().to_string();
+                if !line.is_empty() { let _ = progress_tx.send(line); }
+            }
+            Ok::<_, std::io::Error>(bytes)
         })
     });
     let start = Instant::now();
     let (status, stopped) = loop {
+        if let Some(callback) = on_stderr {
+            while let Ok(line) = progress_rx.try_recv() { callback(&line); }
+        }
         if let Some(status) = child.try_wait()? {
             break (status, None);
         }
@@ -89,6 +131,9 @@ fn output_with_timeout(
             .map_err(|_| anyhow::anyhow!("stderr reader failed"))??,
         None => vec![],
     };
+    if let Some(callback) = on_stderr {
+        while let Ok(line) = progress_rx.try_recv() { callback(&line); }
+    }
     if let Some(reason) = stopped {
         anyhow::bail!("{reason}");
     }
@@ -148,6 +193,21 @@ pub fn map_by<T: Sync, R: Send>(
 mod tests {
     use super::*;
     use std::sync::atomic::AtomicUsize;
+    #[test]
+    fn long_running_stderr_is_visible_before_process_finishes() {
+        let cancel = AtomicBool::new(false);
+        let seen = std::sync::Mutex::new(Vec::new());
+        let started = std::time::Instant::now();
+        let result = output_long_running_progress(
+            std::process::Command::new("sh").args(["-c", "printf 'Compiling fixture\\n' >&2; exec sleep 5"]),
+            true,
+            Some(&cancel),
+            &|line| { seen.lock().unwrap().push(line.to_string()); cancel.store(true, Ordering::Release); },
+        );
+        assert!(result.unwrap_err().to_string().contains("cancelled"));
+        assert_eq!(*seen.lock().unwrap(), ["Compiling fixture"]);
+        assert!(started.elapsed() < std::time::Duration::from_secs(2));
+    }
     #[test]
     fn subprocess_is_cancelled_and_reaped() {
         let cancel = AtomicBool::new(false);

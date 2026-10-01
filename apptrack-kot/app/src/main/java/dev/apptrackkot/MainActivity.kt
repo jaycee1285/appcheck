@@ -17,6 +17,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -65,6 +66,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -93,6 +96,7 @@ data class Loaded(
     val ledgerUri: Uri,
     val ledgerText: String,
     val overlays: Map<String, Overlay>,
+    val snapshots: Map<String, DisplaySnapshot>,
     /** Category edits written to obtainium-import.json but not yet imported into Obtainium. */
     val pending: Map<String, List<String>> = emptyMap(),
     val importUri: Uri? = null,
@@ -101,6 +105,9 @@ data class Loaded(
 
     /** What the screen shows: the export with pending category edits applied. */
     val display: ObtainiumExport by lazy { export.withPending(pending) }
+    val desktopApps: List<DesktopApp> by lazy { Ledger.desktopApps(ledgerText) }
+
+    fun unlistedApps(): List<ObtainiumApp> = Ledger.unlistedApps(export, snapshots)
 
     fun categoriesOf(id: String): List<String> =
         pending[id] ?: export.apps.firstOrNull { it.id == id }?.categories ?: emptyList()
@@ -121,6 +128,9 @@ fun AppTrackKotApp() {
     }
     var attempt by remember { mutableStateOf(0) }
     var selected by rememberSaveable { mutableStateOf<String?>(null) }
+    var unlistedMode by rememberSaveable { mutableStateOf(false) }
+    var desktopMode by rememberSaveable { mutableStateOf(false) }
+    var desktopEditing by rememberSaveable { mutableStateOf<String?>(null) }
 
     val chooseFolder = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { picked ->
         if (picked == null) {
@@ -148,7 +158,7 @@ fun AppTrackKotApp() {
         if (current == null) {
             state = VaultState.RequestingPermission
             step = "1/6 · folder permission"
-            detail = "Grant global file access: pick the Syncthing root folder, where Obtainium writes obtainium-export-*.json."
+            detail = "Grant global file access: pick the Syncthing root folder, where ObtainX or Obtainium writes its export."
         } else {
             load(context, current) { s, st, d, result ->
                 state = s; step = st; detail = d
@@ -161,12 +171,27 @@ fun AppTrackKotApp() {
         // Surface supplies the content color; bare Text defaults to black on the dark window.
         Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxSize()) {
             val current = loaded
-            val app = selected?.let { id -> current?.display?.apps?.firstOrNull { it.id == id } }
-            BackHandler(enabled = app != null) { selected = null }
-            if (app != null && current != null) {
+            val app = selected?.let { id ->
+                current?.display?.apps?.firstOrNull { it.id == id }
+                    ?: current?.unlistedApps()?.firstOrNull { it.id == id }
+            }
+            val unlisted = app != null && current?.export?.apps?.none { it.id == app.id } == true
+            BackHandler(enabled = desktopMode && desktopEditing != null) { desktopEditing = null }
+            BackHandler(enabled = app != null && !desktopMode) { selected = null }
+            if (desktopMode && current != null) {
+                DesktopHome(
+                    loaded = current,
+                    editing = desktopEditing,
+                    onEdit = { desktopEditing = it },
+                    onBack = { desktopEditing = null; desktopMode = false },
+                    onSaved = { loaded = it; desktopEditing = null },
+                    onStale = { attempt++ },
+                )
+            } else if (app != null && current != null) {
                 Detail(
                     app = app,
                     loaded = current,
+                    unlisted = unlisted,
                     onBack = { selected = null },
                     onSaved = { loaded = it },
                     onStale = { attempt++ },
@@ -177,8 +202,11 @@ fun AppTrackKotApp() {
                     step = step,
                     detail = detail,
                     loaded = current,
+                    unlistedMode = unlistedMode,
+                    onUnlistedModeChange = { unlistedMode = it },
                     onRetry = { chooseFolder.launch(null) },
                     onOpen = { selected = it.id },
+                    onDesktop = { desktopMode = true; selected = null },
                 )
             }
         }
@@ -229,8 +257,8 @@ private suspend fun load(
         val failure = withContext(Dispatchers.IO) {
             val root = listChildren(context, tree, DocumentsContract.getTreeDocumentId(tree))
             val name = Obtainium.newest(root.filterValues { !it.isDir }.keys.toList())
-                ?: return@withContext "No obtainium-export-*.json among ${root.size} entries in this folder. " +
-                    "Tap Grant / retry and pick the Syncthing root (syncthing/syncthing), where Obtainium exports."
+                ?: return@withContext "No obtainx-export-*.json or obtainium-export-*.json among ${root.size} entries in this folder. " +
+                    "Tap Grant / retry and pick the Syncthing root (syncthing/syncthing), where ObtainX or Obtainium exports."
             val exportFile = root.getValue(name)
             val ledgerDir = root["apptrack"]?.takeIf { it.isDir }
                 ?: return@withContext "No apptrack/ folder next to $name. Expected apptrack/apptrack.toml in the Syncthing root."
@@ -239,23 +267,33 @@ private suspend fun load(
             val located = SystemClock.elapsedRealtime()
             report(VaultState.Loading, "3/6 · read", "Reading $name (${exportFile.size} bytes) and apptrack.toml…")
             val exportText = readText(context, exportFile.uri)
-            val ledgerText = readText(context, ledgerFile.uri)
+            var ledgerText = readText(context, ledgerFile.uri)
             val read = SystemClock.elapsedRealtime()
             report(VaultState.Loading, "4/6 · parse export", "Parsing $name…")
             val export = Obtainium.parse(exportText, name, exportFile.size)
             val parsedExport = SystemClock.elapsedRealtime()
             report(VaultState.Loading, "5/6 · parse ledger", "Parsing apptrack.toml [[inbox.android]]…")
-            val overlays = Ledger.overlays(ledgerText)
-            val parsedLedger = SystemClock.elapsedRealtime()
-            // Category edits written earlier but not yet imported back into Obtainium.
             val importChild = root[Obtainium.IMPORT_FILE]?.takeIf { !it.isDir }
             val pending = importChild?.let { Obtainium.pending(readText(context, it.uri), export) } ?: emptyMap()
+            val captured = Ledger.refreshSnapshots(ledgerText, export.withPending(pending))
+            if (captured != ledgerText) {
+                if (readText(context, ledgerFile.uri) != ledgerText) throw StaleLedgerException()
+                context.contentResolver.openOutputStream(ledgerFile.uri, "wt")?.use { it.write(captured.toByteArray()) }
+                    ?: throw LedgerException("Could not capture Android row details in apptrack.toml.")
+                if (readText(context, ledgerFile.uri) != captured) {
+                    throw LedgerException("Android row details read back differently; check apptrack.toml.")
+                }
+                ledgerText = captured
+            }
+            val overlays = Ledger.overlays(ledgerText)
+            val snapshots = Ledger.snapshots(ledgerText)
+            val parsedLedger = SystemClock.elapsedRealtime()
             report(
                 VaultState.Loaded,
                 "6/6 · ${export.apps.size} apps · ${overlays.size} notes · ${pending.size} pending",
                 "$name · locate ${located - started} ms · read ${read - located} ms · " +
                     "parse export ${parsedExport - read} ms · ledger ${parsedLedger - parsedExport} ms",
-                Loaded(tree, export, ledgerFile.uri, ledgerText, overlays, pending, importChild?.uri),
+                Loaded(tree, export, ledgerFile.uri, ledgerText, overlays, snapshots, pending, importChild?.uri),
             )
             null
         }
@@ -279,18 +317,31 @@ private suspend fun save(context: Context, loaded: Loaded, app: ObtainiumApp, ov
             id = app.id,
             name = app.name,
             importedFrom = loaded.export.file,
-            observedOn = loaded.export.file.removePrefix("obtainium-export-").take(10),
+            observedOn = Obtainium.observedOn(loaded.export.file),
             overlay = overlay,
+            snapshot = DisplaySnapshot.from(app),
         )
         context.contentResolver.openOutputStream(loaded.ledgerUri, "wt")?.use { it.write(next.toByteArray()) }
             ?: throw LedgerException("Could not open apptrack.toml for writing.")
         val written = readText(context, loaded.ledgerUri)
         if (written != next) throw LedgerException("apptrack.toml read back differently after writing; check it on the desktop.")
-        loaded.copy(ledgerText = written, overlays = Ledger.overlays(written))
+        loaded.copy(ledgerText = written, overlays = Ledger.overlays(written), snapshots = Ledger.snapshots(written))
+    }
+
+private suspend fun saveDesktop(context: Context, loaded: Loaded, originalIdentity: String?, edit: DesktopApp): Loaded =
+    withContext(Dispatchers.IO) {
+        if (readText(context, loaded.ledgerUri) != loaded.ledgerText) throw StaleLedgerException()
+        val next = Ledger.upsertDesktop(loaded.ledgerText, originalIdentity, edit)
+        context.contentResolver.openOutputStream(loaded.ledgerUri, "wt")?.use { it.write(next.toByteArray()) }
+            ?: throw LedgerException("Could not open apptrack.toml for writing.")
+        val written = readText(context, loaded.ledgerUri)
+        if (written != next) throw LedgerException("apptrack.toml read back differently after writing; check it on the desktop.")
+        loaded.copy(ledgerText = written)
     }
 
 /**
- * Rewrites obtainium-import.json with every pending category edit, then reads it back.
+ * Rewrites obtainium-import.json with every pending category edit, then captures
+ * the displayed categories for tracked Android rows in apptrack.toml.
  * Obtainium's import merges by id and never deletes, so one accumulating file is one import.
  */
 private suspend fun saveCategories(
@@ -319,7 +370,20 @@ private suspend fun saveCategories(
         ?: throw ExportException("Could not open ${Obtainium.IMPORT_FILE} for writing.")
     val written = readText(context, uri)
     if (written != document) throw ExportException("${Obtainium.IMPORT_FILE} read back differently after writing.")
-    loaded.copy(pending = Obtainium.pending(written, loaded.export), importUri = uri)
+    val pending = Obtainium.pending(written, loaded.export)
+    val captured = Ledger.refreshSnapshots(loaded.ledgerText, loaded.export.withPending(pending))
+    if (captured != loaded.ledgerText) {
+        if (readText(context, loaded.ledgerUri) != loaded.ledgerText) throw StaleLedgerException()
+        context.contentResolver.openOutputStream(loaded.ledgerUri, "wt")?.use { it.write(captured.toByteArray()) }
+            ?: throw LedgerException("Could not save Android category snapshots in apptrack.toml.")
+        if (readText(context, loaded.ledgerUri) != captured) {
+            throw LedgerException("Android category snapshots read back differently; check apptrack.toml.")
+        }
+    }
+    loaded.copy(
+        pending = pending, importUri = uri, ledgerText = captured,
+        snapshots = Ledger.snapshots(captured),
+    )
 }
 
 /** ui.rs fuzzy_score: substring position, else in-order character match scored past 1000. */
@@ -360,27 +424,124 @@ private fun Disposition?.color() = when (this) {
     null -> Muted
 }
 
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun DesktopHome(
+    loaded: Loaded,
+    editing: String?,
+    onEdit: (String?) -> Unit,
+    onBack: () -> Unit,
+    onSaved: (Loaded) -> Unit,
+    onStale: () -> Unit,
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val apps = loaded.desktopApps
+    var query by rememberSaveable { mutableStateOf("") }
+    var error by remember { mutableStateOf<String?>(null) }
+    if (editing != null) {
+        val original = apps.firstOrNull { it.identity == editing }
+        var name by remember(editing) { mutableStateOf(original?.name ?: "") }
+        var url by remember(editing) { mutableStateOf(original?.url ?: "") }
+        var description by remember(editing) { mutableStateOf(original?.description ?: "") }
+        var category by remember(editing) { mutableStateOf(original?.category ?: "") }
+        var tags by remember(editing) { mutableStateOf(original?.tags ?: "") }
+        var disposition by remember(editing) { mutableStateOf(original?.disposition ?: Disposition.Considering) }
+        LazyColumn(modifier = Modifier.fillMaxSize().systemBarsPadding().imePadding().padding(16.dp)) {
+            item {
+                Text(if (editing.isEmpty()) "Add desktop app" else "Edit desktop app", fontSize = 24.sp)
+                Text("Record only · run c on desktop to check install routes", style = MaterialTheme.typography.bodySmall)
+                OutlinedTextField(name, { name = it }, label = { Text("Name") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(url, { url = it }, label = { Text("Source URL") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(description, { description = it }, label = { Text("Description") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(category, { category = it }, label = { Text("Category") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(tags, { tags = it }, label = { Text("Tags, comma separated") }, modifier = Modifier.fillMaxWidth())
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Disposition.entries.forEach { choice ->
+                        FilterChip(selected = disposition == choice, onClick = { disposition = choice }, label = { Text(choice.label) })
+                    }
+                }
+                error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = { error = null; onEdit(null) }) { Text("Cancel") }
+                    Button(onClick = {
+                        scope.launch {
+                            try {
+                                val saved = saveDesktop(context, loaded, editing.takeIf { it.isNotEmpty() },
+                                    DesktopApp(name = name, url = url, description = description,
+                                        category = category, disposition = disposition, tags = tags))
+                                error = null
+                                onSaved(saved)
+                            } catch (stale: StaleLedgerException) {
+                                error = stale.message
+                                onStale()
+                            } catch (failure: Exception) {
+                                error = failure.message ?: failure.toString()
+                            }
+                        }
+                    }) { Text("Save") }
+                }
+            }
+        }
+        return
+    }
+    val visible = apps.filter { query.isBlank() || "${it.name} ${it.url} ${it.description} ${it.category} ${it.tags}".contains(query, ignoreCase = true) }
+    LazyColumn(modifier = Modifier.fillMaxSize().systemBarsPadding().padding(horizontal = 16.dp)) {
+        item {
+            Text("Desktop Track", fontSize = 28.sp, modifier = Modifier.padding(top = 16.dp))
+            Text("${apps.size} apps · synced apptrack.toml", style = MaterialTheme.typography.bodySmall)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = onBack) { Text("Android Track") }
+                Button(onClick = { onEdit("") }) { Text("Add app") }
+            }
+            OutlinedTextField(query, { query = it }, label = { Text("Search desktop apps") }, modifier = Modifier.fillMaxWidth())
+        }
+        for ((category, group) in visible.groupBy { it.category }.toSortedMap(String.CASE_INSENSITIVE_ORDER)) {
+            item(key = "category:$category") {
+                Text("$category · ${group.size}", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 14.dp))
+            }
+            items(group, key = { it.identity }) { app ->
+                Row(modifier = Modifier.fillMaxWidth().clickable { onEdit(app.identity) }.padding(vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically) {
+                    Dot(app.disposition.color())
+                    Column(modifier = Modifier.padding(start = 10.dp)) {
+                        Text(app.name)
+                        if (app.description.isNotBlank()) Text(app.description, style = MaterialTheme.typography.bodySmall, maxLines = 2)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun Home(
     state: VaultState,
     step: String,
     detail: String,
     loaded: Loaded?,
+    unlistedMode: Boolean,
+    onUnlistedModeChange: (Boolean) -> Unit,
     onRetry: () -> Unit,
     onOpen: (ObtainiumApp) -> Unit,
+    onDesktop: () -> Unit,
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     val expanded = rememberSaveable(saver = stringListSaver) { mutableStateListOf<String>() }
+    val unlistedCollapsed = rememberSaveable(saver = stringListSaver) { mutableStateListOf<String>() }
     // Independent U / C / A toggles; none on shows everything, including unclassified apps.
     val filters = rememberSaveable(saver = stringListSaver) { mutableStateListOf<String>() }
 
     fun visible(app: ObtainiumApp) =
-        filters.isEmpty() || loaded?.overlay(app.id)?.disposition?.key in filters
+        unlistedMode || filters.isEmpty() || loaded?.overlay(app.id)?.disposition?.key in filters
 
     val export = loaded?.display
+    val unlisted = loaded?.unlistedApps().orEmpty()
+    val shownApps = if (unlistedMode) unlisted else export?.apps.orEmpty()
     val rows: List<ListRow> = when {
         export == null -> emptyList()
-        query.isNotBlank() -> export.apps
+        query.isNotBlank() -> shownApps
             .filter(::visible)
             .mapNotNull { a ->
                 fuzzyScore(query, "${a.name} ${a.author} ${a.id} ${a.categories.joinToString(" ")}")
@@ -388,6 +549,19 @@ fun Home(
             }
             .sortedBy { it.first }
             .map { ListRow.App(it.second, "search") }
+        unlistedMode -> buildList {
+            val names = unlisted.flatMap { app ->
+                app.categories.ifEmpty { listOf(ObtainiumExport.UNCATEGORIZED) }
+            }.distinct().sortedWith(String.CASE_INSENSITIVE_ORDER)
+            for (name in names) {
+                val apps = unlisted.filter { app ->
+                    if (name == ObtainiumExport.UNCATEGORIZED) app.categories.isEmpty()
+                    else name in app.categories
+                }
+                add(ListRow.Category(ObtainiumCategory(name, export.colors[name]), apps.size))
+                if (name !in unlistedCollapsed) apps.forEach { add(ListRow.App(it, name)) }
+            }
+        }
         else -> buildList {
             for (category in export.categories) {
                 val apps = export.appsIn(category.name).filter(::visible)
@@ -407,6 +581,7 @@ fun Home(
     ) {
         item {
             Text("AppTrack-KOT", fontSize = 28.sp, modifier = Modifier.padding(top = 16.dp))
+            OutlinedButton(onClick = onDesktop) { Text("Desktop Track · ${loaded?.desktopApps?.size ?: 0}") }
             Text("smoke 5 · Obtainium projection + notes", style = MaterialTheme.typography.bodyMedium)
             Text(
                 "state: ${state.label} · step $step",
@@ -425,16 +600,27 @@ fun Home(
             item {
                 val unclassified = export.apps.count { loaded.overlay(it.id).disposition == null }
                 Text(
-                    "${export.apps.size} apps · ${export.installed} installed · $unclassified unclassified",
+                    if (unlistedMode) "${unlisted.size} unlisted · saved in apptrack.toml"
+                    else "${export.apps.size} apps · ${export.installed} installed · $unclassified unclassified",
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(top = 8.dp),
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(top = 8.dp),
+                ) {
                     for (d in Disposition.entries) {
                         val on = d.key in filters
                         FilterChip(
-                            selected = on,
-                            onClick = { if (!filters.remove(d.key)) filters.add(d.key) },
+                            selected = on && !unlistedMode,
+                            onClick = {
+                                if (unlistedMode) {
+                                    onUnlistedModeChange(false)
+                                    filters.clear()
+                                    filters.add(d.key)
+                                } else if (!filters.remove(d.key)) filters.add(d.key)
+                            },
                             label = {
                                 Text(
                                     "${d.mark} ${export.apps.count { loaded.overlay(it.id).disposition == d }}",
@@ -444,6 +630,12 @@ fun Home(
                             modifier = Modifier.heightIn(min = 48.dp),
                         )
                     }
+                    FilterChip(
+                        selected = unlistedMode,
+                        onClick = { onUnlistedModeChange(!unlistedMode) },
+                        label = { Text("Unlisted ${unlisted.size}") },
+                        modifier = Modifier.heightIn(min = 48.dp),
+                    )
                 }
                 OutlinedTextField(
                     value = query,
@@ -453,7 +645,8 @@ fun Home(
                     modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                 )
                 if (query.isNotBlank() || filters.isNotEmpty()) {
-                    val shown = if (query.isNotBlank()) rows.size else export.apps.count(::visible)
+                    val shown = if (query.isNotBlank()) rows.size
+                        else if (unlistedMode) unlisted.size else export.apps.count(::visible)
                     Text("$shown shown", style = MaterialTheme.typography.bodySmall)
                 }
             }
@@ -467,10 +660,18 @@ fun Home(
                     is ListRow.Category -> CategoryRow(
                         category = row.category,
                         count = row.count,
-                        open = row.category.name in expanded,
-                        onToggle = { if (!expanded.remove(row.category.name)) expanded.add(row.category.name) },
+                        open = if (unlistedMode) row.category.name !in unlistedCollapsed else row.category.name in expanded,
+                        onToggle = {
+                            val state = if (unlistedMode) unlistedCollapsed else expanded
+                            if (!state.remove(row.category.name)) state.add(row.category.name)
+                        },
                     )
-                    is ListRow.App -> AppRow(row.app, onClick = { onOpen(row.app) })
+                    is ListRow.App -> AppRow(
+                        row.app,
+                        loaded.overlay(row.app.id).disposition,
+                        unlisted = unlistedMode,
+                        onClick = { onOpen(row.app) },
+                    )
                 }
             }
         }
@@ -480,6 +681,17 @@ fun Home(
 @Composable
 private fun Dot(color: Color) {
     Box(Modifier.size(10.dp).background(color, CircleShape))
+}
+
+@Composable
+private fun DispositionDot(disposition: Disposition?) {
+    val modifier = Modifier
+        .size(10.dp)
+        .semantics { contentDescription = disposition?.label ?: "Untagged" }
+    Box(
+        if (disposition == null) modifier.border(1.dp, MaterialTheme.colorScheme.onBackground, CircleShape)
+        else modifier.background(disposition.color(), CircleShape),
+    )
 }
 
 @Composable
@@ -500,31 +712,42 @@ private fun CategoryRow(category: ObtainiumCategory, count: Int, open: Boolean, 
 }
 
 @Composable
-private fun AppRow(app: ObtainiumApp, onClick: () -> Unit) {
+private fun AppRow(app: ObtainiumApp, disposition: Disposition?, unlisted: Boolean, onClick: () -> Unit) {
     val versions = when (val installed = app.installedVersion) {
         null -> "not installed · latest ${app.latestVersion ?: "unknown"}"
         else -> "installed $installed · latest ${app.latestVersion ?: "unknown"}"
     }
-    Column(
+    val subtitle = if (unlisted) {
+        listOf(
+            app.categories.joinToString(", ").ifEmpty { ObtainiumExport.UNCATEGORIZED },
+            app.author,
+            versions,
+        ).filter { it.isNotEmpty() }.joinToString(" · ")
+    } else "${app.author} · $versions"
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 56.dp)
             .clickable(onClick = onClick)
             .padding(start = 28.dp, top = 6.dp, bottom = 6.dp),
     ) {
-        Text(
-            app.name + if (app.pinned) "  · pinned" else "",
-            style = MaterialTheme.typography.bodyLarge,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Text(
-            "${app.author} · $versions",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
+        DispositionDot(disposition)
+        Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
+            Text(
+                app.name + if (app.pinned) "  · pinned" else "",
+                style = MaterialTheme.typography.bodyLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
     }
 }
 
@@ -532,6 +755,7 @@ private fun AppRow(app: ObtainiumApp, onClick: () -> Unit) {
 private fun Detail(
     app: ObtainiumApp,
     loaded: Loaded,
+    unlisted: Boolean,
     onBack: () -> Unit,
     onSaved: (Loaded) -> Unit,
     onStale: () -> Unit,
@@ -541,12 +765,16 @@ private fun Detail(
     val fields = listOf(
         "package id" to app.id,
         "author" to app.author.ifEmpty { "none" },
-        "source" to app.url.ifEmpty { "none" },
         "installed version" to (app.installedVersion ?: "not installed"),
         "latest version" to (app.latestVersion ?: "unknown"),
+        "pinned" to app.pinned.toString(),
+    ) + if (unlisted) listOf(
+        "last known categories" to app.categories.joinToString(", ").ifEmpty { ObtainiumExport.UNCATEGORIZED },
+        "listing" to "No longer in the selected export; the note remains in apptrack.toml",
+    ) else listOf(
+        "source" to app.url.ifEmpty { "none" },
         "release date" to Obtainium.formatMicros(app.releaseDateMicros),
         "last update check" to Obtainium.formatMicros(app.lastUpdateCheckMicros),
-        "pinned" to app.pinned.toString(),
         "APK assets" to app.apkNames.joinToString("\n").ifEmpty { "none" },
         "from export" to loaded.export.file,
     )
@@ -579,8 +807,10 @@ private fun Detail(
             Text("Edit description / disposition")
         }
         HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
-        Categories(app, loaded, onSaved)
-        HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+        if (!unlisted) {
+            Categories(app, loaded, onSaved)
+            HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
+        }
         for ((label, value) in fields) {
             Label(label)
             Text(value, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 8.dp))
@@ -597,7 +827,7 @@ private fun Detail(
         app.changeLog?.let {
             Collapsible("changelog") { Text(it, style = MaterialTheme.typography.bodySmall) }
         }
-        Collapsible("complete export record") {
+        if (!unlisted) Collapsible("complete export record") {
             Text(app.raw, fontFamily = FontFamily.Monospace, fontSize = 12.sp)
         }
         Box(Modifier.heightIn(min = 24.dp))

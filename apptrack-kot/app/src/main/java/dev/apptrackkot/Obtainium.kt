@@ -81,10 +81,15 @@ data class ObtainiumExport(
 class ExportException(message: String) : Exception(message)
 
 object Obtainium {
-    private val exportName = Regex("""^obtainium-export-.*\.json$""")
+    private val obtainiumExportName = Regex("""^obtainium-export-.*\.json$""")
+    private val obtainxExportName = Regex("""^obtainx-export-.*\.json$""")
 
-    /** Export names embed an ISO timestamp, so the lexically greatest is the newest. */
-    fun newest(names: List<String>): String? = names.filter { exportName.matches(it) }.maxOrNull()
+    /** Prefer the current ObtainX source; within a source, ISO timestamps sort lexically. */
+    fun newest(names: List<String>): String? =
+        names.filter { obtainxExportName.matches(it) }.maxOrNull()
+            ?: names.filter { obtainiumExportName.matches(it) }.maxOrNull()
+
+    fun observedOn(file: String): String = file.substringAfter("-export-").take(10)
 
     fun parse(text: String, file: String, bytes: Long): ObtainiumExport {
         val root = JSONObject(text)

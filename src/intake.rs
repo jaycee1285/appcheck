@@ -1,4 +1,4 @@
-//! Explicit GitHub intake. Nothing is saved until the final review.
+//! Explicit GitHub intake. A saved record can be reviewed for an install recipe.
 use crate::{
     archive,
     ledger::{App, Disposition, Launch, Ledger, Provenance, expand_path, normalize_identity},
@@ -67,6 +67,27 @@ fn repository(input: &str) -> Result<String> {
         "Use a GitHub repository URL or owner/repo, not a release/file URL"
     );
     Ok(repo.into())
+}
+
+fn forge_source(input: &str) -> Result<(&'static str, String)> {
+    let trimmed = input.trim().trim_end_matches('/').trim_end_matches(".git");
+    let (kind, repo) = if let Some(repo) = trimmed.strip_prefix("https://codeberg.org/") { ("codeberg", repo) }
+        else if let Some(repo) = trimmed.strip_prefix("https://gitlab.com/") { ("gitlab", repo) }
+        else { ("github", trimmed.strip_prefix("https://github.com/").unwrap_or(trimmed)) };
+    let parts: Vec<_> = repo.split('/').collect();
+    ensure!(parts.len() >= 2 && (kind == "gitlab" || parts.len() == 2)
+        && parts.iter().all(|part| update::safe_name(part)),
+        "Use a GitHub repository URL or owner/repo, or a Codeberg/GitLab repository URL, not a release/file URL");
+    Ok((kind, repo.into()))
+}
+
+fn forge_release(kind: &str, repo: &str, dialog: &dyn crate::dialog::Dialog) -> Result<update::Release> {
+    match kind {
+        "github" => update::release_cancellable(repo, dialog.cancel_flag()),
+        "codeberg" => crate::codeberg_strategy::inspect_release(repo, dialog.cancel_flag()),
+        "gitlab" => crate::gitlab_strategy::inspect_release(repo, dialog.cancel_flag()),
+        _ => anyhow::bail!("Unsupported forge"),
+    }
 }
 
 fn installer(name: &str) -> Option<&'static str> {
@@ -173,22 +194,110 @@ pub fn interactive(ledger: &mut Ledger, seed: Option<&str>, category: &str) -> R
     interactive_with(ledger, seed, category, None, &crate::dialog::Console)
 }
 
+macro_rules! say { ($dialog:expr, $($args:tt)*) => { $dialog.message(format!($($args)*)) }; }
+
 pub(crate) fn configure_source(ledger: &mut Ledger, index: usize, dialog: &dyn crate::dialog::Dialog) -> Result<String> {
     let app = ledger.apps.get(index).context("Application no longer exists")?;
-    ensure!(app.recipe.is_none(), "{} already has an install recipe", app.name);
     let source = app.identity.clone();
-    ensure!(source.starts_with("https://github.com/"), "Source review currently needs a GitHub repository identity");
-    let Some(method) = dialog.choose("Check install method", &[
-        "GitHub release binary / archive".into(), "Cargo registry package".into(), "Keep record only".into(),
-    ], None)? else { return Ok("Source review cancelled; record retained.".into()); };
-    match method {
-        0 => interactive_with(ledger, Some(&source), "", None, dialog),
+    let result = configure_source_checked(ledger, index, &source, dialog);
+    if let Err(error) = &result {
+        ledger.record_failure(index, "check", &format!("{error:#}"))?;
+    }
+    result
+}
+
+pub(crate) fn release_check(ledger: &mut Ledger, index: usize, dialog: &dyn crate::dialog::Dialog) -> Result<String> {
+    let result = release_check_checked(ledger, index, dialog);
+    if let Err(error) = &result { ledger.record_failure(index, "release-check", &format!("{error:#}"))?; }
+    result
+}
+
+fn release_check_checked(ledger: &mut Ledger, index: usize, dialog: &dyn crate::dialog::Dialog) -> Result<String> {
+    let app = ledger.apps.get(index).context("Application no longer exists")?;
+    let source = app.identity.clone();
+    let (kind, repo) = forge_source(&source)?;
+    say!(dialog, "Checking the latest release for {repo}…");
+    let release = forge_release(kind, &repo, dialog)?;
+    if dialog.cancelled() { return Ok("Release check cancelled.".into()); }
+    let current = app.recipe.as_ref().filter(|recipe| recipe.source == kind);
+    let current_asset = current.map(|recipe| update::substitute(&recipe.asset, &release.tag_name));
+    let current_present = current_asset.as_ref().is_some_and(|name| release.assets.iter().any(|asset| &asset.name == name));
+    let mut assets: Vec<_> = release.assets.iter().filter(|asset| installer(&asset.name).is_some_and(|method| kind != "gitlab" || matches!(method, "binary-copy" | "appimage")))
+        .map(|asset| format!("{}{}", asset.name, if matches_machine(&asset.name) { " *" } else { "" })).collect();
+    assets.sort();
+    say!(dialog, "Release {}\nCurrent route: {}\nSupported artifacts (machine matches *):\n{}",
+        release.tag_name,
+        match current_asset { Some(ref name) if current_present => format!("{name} is present"), Some(ref name) => format!("{name} is missing"), None => "none recorded".into() },
+        if assets.is_empty() { "none".into() } else { assets.join("\n") });
+    ensure!(!assets.is_empty(), "Release checked; no supported artifact found. Existing recipe unchanged.");
+    let Some(choice) = dialog.choose("Release route", &["Review an artifact and save a recipe".into(), "Keep current recipe".into()], Some(1))? else {
+        return Ok("Release checked; existing recipe unchanged.".into());
+    };
+    if choice == 1 { return Ok("Release checked; existing recipe unchanged.".into()); }
+    interactive_with_release(ledger, Some(&source), "", None, Some(release), dialog)
+}
+
+fn source_choices(kind: &str, release: &Result<update::Release>, cargo: &Result<Vec<String>>) -> (String, Vec<String>, Vec<usize>) {
+    let mut report = format!("{kind} source check");
+    let mut labels = Vec::new();
+    let mut methods = Vec::new();
+    match release {
+        Ok(release) => {
+            let assets: Vec<_> = release.assets.iter().filter(|asset| installer(&asset.name).is_some()).collect();
+            let machine = assets.iter().filter(|asset| matches_machine(&asset.name)).count();
+            report.push_str(&format!("\nRelease {}: {} candidate asset(s), {machine} machine match(es)", release.tag_name, assets.len()));
+            if !assets.is_empty() {
+                labels.push(format!("Review release ({} assets, {machine} machine matches)", assets.len()));
+                methods.push(0);
+            }
+        }
+        Err(error) => report.push_str(&format!("\nRelease: {error:#}")),
+    }
+    match cargo {
+        Ok(packages) => {
+            report.push_str(&format!("\nCargo install routes: {}", packages.join(", ")));
+            labels.push(format!("Review Cargo install ({})", packages.join(", ")));
+            methods.push(1);
+        }
+        Err(error) => report.push_str(&format!("\nCargo install routes: {error:#}")),
+    }
+    labels.push("Keep record only".into());
+    methods.push(2);
+    (report, labels, methods)
+}
+
+fn configure_source_checked(ledger: &mut Ledger, index: usize, source: &str, dialog: &dyn crate::dialog::Dialog) -> Result<String> {
+    let (kind, repo) = forge_source(source)?;
+    say!(dialog, "Checking {kind} repository {repo}…");
+    if kind == "github" {
+        let output = crate::work::output(
+            Command::new("gh").args(["repo", "view", &repo, "--json", "name"])
+                .env("GH_PROMPT_DISABLED", "1"), true, Some(dialog.cancel_flag()))?;
+        ensure!(output.status.success(), "GitHub repository lookup failed: {}", String::from_utf8_lossy(&output.stderr).trim());
+    }
+    if dialog.cancelled() { return Ok("Source review cancelled; record retained.".into()); }
+    say!(dialog, "Checking GitHub releases for {repo}…");
+    let release = forge_release(kind, &repo, dialog).map(|mut release| {
+        if kind == "gitlab" { release.assets.retain(|asset| installer(&asset.name).is_some_and(|method| matches!(method, "binary-copy" | "appimage"))); }
+        release
+    });
+    if dialog.cancelled() { return Ok("Source review cancelled; record retained.".into()); }
+    say!(dialog, "Checking Cargo packages for {repo}…");
+    let cargo = if kind == "github" { crate::cargo_intake::available(&repo, dialog) }
+        else { Err(anyhow::anyhow!("Cargo README review currently needs GitHub")) };
+    if dialog.cancelled() { return Ok("Source review cancelled; record retained.".into()); }
+    let (report, labels, methods) = source_choices(kind, &release, &cargo);
+    say!(dialog, "{report}");
+    ensure!(methods.iter().any(|method| *method != 2), "No install route found. {report}");
+    let Some(choice) = dialog.choose("Available install options", &labels, None)? else {
+        return Ok("Source review cancelled; record retained.".into());
+    };
+    match methods[choice] {
+        0 => interactive_with_release(ledger, Some(source), "", None, release.ok(), dialog),
         1 => crate::cargo_intake::configure(ledger, index, dialog),
         _ => Ok("Record saved without an install recipe.".into()),
     }
 }
-
-macro_rules! say { ($dialog:expr, $($args:tt)*) => { $dialog.message(format!($($args)*)) }; }
 
 pub(crate) fn interactive_with(
     ledger: &mut Ledger,
@@ -197,11 +306,19 @@ pub(crate) fn interactive_with(
     fields: Option<&[String; 5]>,
     dialog: &dyn crate::dialog::Dialog,
 ) -> Result<String> {
-    say!(
-        dialog,
-        "Add from GitHub — q cancels at any prompt.\nNothing is installed or saved until review."
-    );
-    let cancel = || Ok("Add cancelled; ledger and installed files unchanged.".to_string());
+    interactive_with_release(ledger, seed, category, fields, None, dialog)
+}
+
+fn interactive_with_release(
+    ledger: &mut Ledger,
+    seed: Option<&str>,
+    category: &str,
+    fields: Option<&[String; 5]>,
+    checked_release: Option<update::Release>,
+    dialog: &dyn crate::dialog::Dialog,
+) -> Result<String> {
+    say!(dialog, "Review release — q cancels at any prompt.\nNo recipe or executable changes until final review.");
+    let cancel = || Ok("Source review cancelled; no recipe or executable changed.".to_string());
     let input = match seed {
         Some(url) => url.to_string(),
         None => {
@@ -211,8 +328,9 @@ pub(crate) fn interactive_with(
             url
         }
     };
-    let repo = repository(&input)?;
-    let identity = normalize_identity(&format!("https://github.com/{repo}"));
+    let (kind, repo) = forge_source(&input)?;
+    let host = match kind { "github" => "github.com", "codeberg" => "codeberg.org", _ => "gitlab.com" };
+    let identity = normalize_identity(&format!("https://{host}/{repo}"));
     let existing = ledger
         .apps
         .iter()
@@ -224,20 +342,15 @@ pub(crate) fn interactive_with(
             "{} is Archived; move it to Considering before configuring installation",
             app.name
         );
-        if app.recipe.is_some() {
-            return Ok(format!(
-                "{} is already tracked and configured. Use u to update it; nothing changed.",
-                app.name
-            ));
-        }
         say!(
             dialog,
-            "\nAlready tracked: {} ({})\nAdding its missing recipe; preserving decisions, notes and installed paths.",
+            "\nAlready tracked: {} ({})\nReviewing available release routes; decisions, notes and installed paths remain recorded.",
             app.name,
             app.category
         );
         app
     } else {
+        ensure!(kind == "github", "Add a record for this forge first, then run c to review its release");
         say!(dialog, "Looking up {repo}…");
         let output = crate::work::output(
             Command::new("gh")
@@ -324,21 +437,25 @@ pub(crate) fn interactive_with(
         }
         app
     };
-    say!(dialog, "\nLooking up latest stable release…");
-    let release = update::release_cancellable(&repo, dialog.cancel_flag())?;
+    let release = if let Some(release) = checked_release {
+        release
+    } else {
+        say!(dialog, "\nLooking up latest stable release…");
+        forge_release(kind, &repo, dialog)?
+    };
     if dialog.cancelled() {
         return cancel();
     }
     let mut assets: Vec<_> = release
         .assets
         .iter()
-        .filter(|a| installer(&a.name).is_some())
+        .filter(|a| installer(&a.name).is_some_and(|method| kind != "gitlab" || matches!(method, "binary-copy" | "appimage")))
         .cloned()
         .collect();
     assets.sort_by_key(|a| (!matches_machine(&a.name), a.name.clone()));
     ensure!(
         !assets.is_empty(),
-        "No supported release assets. Use Ctrl-S in the Add form for a record-only entry."
+        "No supported release assets. The record is retained; use e to try Cargo or revise the source."
     );
     say!(
         dialog,
@@ -367,7 +484,7 @@ pub(crate) fn interactive_with(
     let kind = installer(&asset.name).unwrap();
     let bin_dir = std::env::var("APPTRACK_BIN_DIR").unwrap_or_else(|_| "~/.local/bin".into());
     let mut recipe = Recipe {
-        source: "github".into(),
+        source: kind.into(),
         repo,
         asset: asset_pattern(&asset.name, &release.tag_name),
         installer: kind.into(),
@@ -545,7 +662,11 @@ pub(crate) fn interactive_with(
             return cancel();
         }
         app.launch = Some(launch);
-        plan.index = ledger.register_recipe(&app)?;
+        plan.index = if existing.is_some_and(|i| ledger.apps[i].recipe.is_some()) {
+            ledger.replace_recipe(&app)?
+        } else {
+            ledger.register_recipe(&app)?
+        };
         if dialog.cancelled() {
             return Ok("Recipe saved; installation cancelled.".into());
         }
@@ -594,8 +715,61 @@ mod tests {
     use super::*;
     use sha2::{Digest, Sha256};
 
+    struct NoPrompt;
+
+    impl crate::dialog::Dialog for NoPrompt {
+        fn message(&self, _text: String) {}
+        fn prompt(&self, _label: &str, _default: &str) -> Result<Option<String>> {
+            Ok(None)
+        }
+        fn choose(&self, _label: &str, _names: &[String], _default: Option<usize>) -> Result<Option<usize>> {
+            Ok(None)
+        }
+    }
+
+    #[test]
+    fn failed_source_review_keeps_record_and_reason() -> Result<()> {
+        let dir = tempfile::tempdir()?;
+        let path = dir.path().join("ledger.toml");
+        fs::write(&path, "schema_version = 1\n")?;
+        let mut ledger = Ledger::open(&path)?;
+        // The URL has no owner/repo pair, so release review fails before any network request.
+        ledger.add("Unverified", "Tools", "https://github.com/invalid", "Keep description", "tui")?;
+        let index = ledger.find("https://github.com/invalid")?;
+        assert!(configure_source(&mut ledger, index, &NoPrompt).is_err());
+        let reopened = Ledger::open(&path)?;
+        assert_eq!(reopened.apps[index].disposition, Disposition::Considering);
+        assert_eq!(reopened.apps[index].description, "Keep description");
+        assert_eq!(reopened.apps[index].tags, ["tui"]);
+        assert!(reopened.apps[index].recipe.is_none());
+        assert!(reopened.record(index).contains("failure_history"));
+        assert!(reopened.record(index).contains("Use a GitHub repository URL"));
+        Ok(())
+    }
+
+    #[test]
+    fn source_choices_explain_which_install_routes_were_found() {
+        let release = update::Release {
+            tag_name: "v1".into(),
+            is_prerelease: false,
+            assets: vec![update::Asset { name: "tool-linux-x86_64.tar.gz".into(), api_url: String::new(), size: 1, digest: None }],
+        };
+        let (report, labels, methods) = source_choices("github", &Ok(release), &Err(anyhow::anyhow!("No Cargo.toml")));
+        assert!(report.contains("1 machine match"));
+        assert!(report.contains("No Cargo.toml"));
+        assert_eq!(methods, [0, 2]);
+        assert_eq!(labels.len(), 2);
+
+        let (report, labels, methods) = source_choices("github", &Err(anyhow::anyhow!("No release")), &Ok(vec!["tool 1.0".into()]));
+        assert!(report.contains("No release"));
+        assert!(labels[0].contains("tool 1.0"));
+        assert_eq!(methods, [1, 2]);
+    }
+
     #[test]
     fn repository_inputs_and_version_tokens_are_explicit() -> Result<()> {
+        assert_eq!(forge_source("https://codeberg.org/ArkHost/HelixNotes")?, ("codeberg", "ArkHost/HelixNotes".into()));
+        assert_eq!(forge_source("https://gitlab.com/ArkHost/HelixNotes")?, ("gitlab", "ArkHost/HelixNotes".into()));
         assert_eq!(
             repository(" https://github.com/TysonLabs/lazyide.git/ ")?,
             "TysonLabs/lazyide"
